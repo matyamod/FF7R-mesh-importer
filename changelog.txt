@@ -1,0 +1,12 @@
+ver 0.1.2
+- add 'dumpBuffer' mode
+- add 'removeKDI' mode
+- optimize some functions
+- change the scale setting in the Blender script
+
+ver 0.1.1
+- Ignore vertex colors
+- Ignore letter case of the armature name in the Blender script
+
+ver 0.1.0
+- Initial version
