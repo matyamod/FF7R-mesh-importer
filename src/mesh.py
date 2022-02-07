@@ -96,9 +96,7 @@ class LODSection:
         self.unk2=[]
 
     def bone_ids_to_name(bone_ids, bones):
-        bone_name_list=[]
-        for id in bone_ids:
-            bone_name_list.append(bones[id].name)
+        bone_name_list=[bones[id].name for id in bone_ids]
         return bone_name_list
 
     def print(self, name, bones, padding=2):
@@ -117,12 +115,17 @@ class LODSection:
             print(pad+'  vertices influenced by KDI: {}'.format(len(self.unk2)//16))
 
 class Vertex:
+    '''
+    We don't need to parse vertex data.
+    Only binary data is needed.
+
     #normal1: normal (object space?) (-1.0~1.0 -> 0~255)
     #normal2: normal (tangent space) (-1.0~1.0 -> 0~255)
     #pos: position
     #uv: uv map array ((u,v)*uv_num)
     #group_id: id of vertex group (not bone id) [id1, id2, ...]
     #weight: weight [id1's weight, id2's weight, ...]
+    '''
     def __init__(self, f, uv_num, use_float32UV):
         self.vb=f.read(20+uv_num*4*(1+use_float32UV))
         '''
@@ -179,7 +182,7 @@ class Vertex:
 
 class Face:
     '''
-    We don't need parse face data.
+    We don't need to parse face data.
     Only binary data is needed.
 
     #v: vertex ids (v1,v2,v3)
@@ -334,11 +337,7 @@ class LOD:
         
         vertex_num = read_uint32(f)
         vb_offset=f.tell()
-        vertices=[]
-
-        for i in range(vertex_num):
-            v=Vertex.read(f, uv_num, use_float32UV)
-            vertices.append(v)
+        vertices=[Vertex.read(f, uv_num, use_float32UV) for i in range(vertex_num)]
 
         strip_flags=read_uint16_array(f, len=2)
         
@@ -466,6 +465,13 @@ class LOD:
         self.faces=lod.faces
         self.vertices=lod.vertices
         self.faces2=lod.faces2
+        self.influence_size=lod.influence_size
+        #self.strip_flags=lod.strip_flags
+        self.use_float32UV=lod.use_float32UV
+        self.face_uint_type=lod.face_uint_type
+        self.face2_uint_type=lod.face2_uint_type
+        self.active_bone_ids=lod.active_bone_ids
+        self.required_bone_ids=lod.required_bone_ids
         uv_num=self.uv_num
         self.uv_num=lod.uv_num
         self.scale=lod.scale
@@ -507,12 +513,16 @@ class PhysicalMesh: #collider or something? low poly mesh.
 
     def __init__(self, f):
         self.offset=f.tell()
-        self.vertices=read_vec3_f32_array(f)
-        vertex_num=len(self.vertices)
+        vertex_num=read_uint32(f)
+        self.vb=f.read(vertex_num*12)
+        #self.vertices=read_vec3_f32_array(f)
+        #vertex_num=len(self.vertices)
         
         num = read_uint32(f)
         check(num, vertex_num, f, 'Parse failed! (StaticMesh:vertex_num)')
         
+        self.weight_buffer=f.read(num*12)
+        '''
         self.bone_id=[]
         self.weight=[]
         for i in range(num):
@@ -520,6 +530,7 @@ class PhysicalMesh: #collider or something? low poly mesh.
             self.bone_id.append(bone_id)
             weight=read_uint8_array(f, len=4)
             self.weight.append(weight)
+        '''
 
         face_num=read_uint32(f)
         self.faces=Face.read_array(f, len=face_num)
@@ -528,16 +539,21 @@ class PhysicalMesh: #collider or something? low poly mesh.
         return PhysicalMesh(f)
 
     def write(f, mesh):
-        write_vec3_f32_array(f, mesh.vertices, with_length=True)
-        write_uint32(f, len(mesh.bone_id))
+        write_uint32(f, len(mesh.vb)//12)
+        f.write(mesh.vb)
+        #write_vec3_f32_array(f, mesh.vertices, with_length=True)
+        write_uint32(f, len(mesh.weight_buffer)//12)
+        f.write(mesh.weight_buffer)
+        '''
         for bone_id, weight in zip(mesh.bone_id, mesh.weight):
             write_uint16_array(f, bone_id)
             write_uint8_array(f, weight)
+        '''
         write_uint32(f, len(mesh.faces)//6)
         Face.write_array(f, mesh.faces)
 
     def print(self, padding=0):
         pad=' '*padding
         print(pad+'Mesh (offset: {})'.format(self.offset))
-        print(pad+'  vertex_num: {}'.format(len(self.vertices)))
+        print(pad+'  vertex_num: {}'.format(len(self.vb)//12))
         print(pad+'  face_num: {}'.format(len(self.faces)))
