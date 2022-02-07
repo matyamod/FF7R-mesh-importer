@@ -180,6 +180,11 @@ class Vertex:
         #write_uint8_array(f, vertex.group_id)
         #write_uint8_array(f, vertex.weight)
 
+    def lower_buffer(self):
+        if len(self.vb2)==8:
+            return
+        self.vb2=self.vb2[:4]+self.vb2[8:12]
+
 class Face:
     '''
     We don't need to parse face data.
@@ -475,6 +480,7 @@ class LOD:
         uv_num=self.uv_num
         self.uv_num=lod.uv_num
         self.scale=lod.scale
+        self.strip_flags=lod.strip_flags
         print('LOD{} has been imported.'.format(name))
         print('  faces: {} -> {}'.format(f_num1, f_num2))
         print('  vertices: {} -> {}'.format(v_num1, v_num2))
@@ -505,6 +511,20 @@ class LOD:
         self.unknown_VB=None
         for section in self.sections:
             section.remove_KDI()
+
+    def lower_buffer(self):
+        if self.influence_size==8:
+            return 
+        self.influence_size=8
+        self.strip_flags[1]=0
+
+        print("lower buffer")
+
+        for section in self.sections:
+            section.max_bone_influences=min(section.max_bone_influences, 4)
+
+        for v in self.vertices:
+            v.lower_buffer()
 
 class PhysicalMesh: #collider or something? low poly mesh.
     #vertices
