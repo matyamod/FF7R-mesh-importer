@@ -1,3 +1,7 @@
+ver 0.1.2.a
+- optimize some functions
+- add support for importing the stride of VB2
+
 ver 0.1.2
 - add 'dumpBuffer' mode
 - add 'removeKDI' mode

@@ -96,9 +96,7 @@ class LODSection:
         self.unk2=[]
 
     def bone_ids_to_name(bone_ids, bones):
-        bone_name_list=[]
-        for id in bone_ids:
-            bone_name_list.append(bones[id].name)
+        bone_name_list=[bones[id].name for id in bone_ids]
         return bone_name_list
 
     def print(self, name, bones, padding=2):
@@ -113,16 +111,24 @@ class LODSection:
         print(pad+'  vertex_num: {}'.format(self.vertex_num))
         print(pad+'  max bone influences: {}'.format(self.max_bone_influences))
         if self.unk2 is not None:
-            print(pad+'  unk2_num: {}'.format(len(self.unk2)//16))
+            print(pad+'  KDI flag: {}'.format(self.unk1==True))
+            print(pad+'  vertices influenced by KDI: {}'.format(len(self.unk2)//16))
 
 class Vertex:
+    '''
+    We don't need to parse vertex data.
+    Only binary data is needed.
+
     #normal1: normal (object space?) (-1.0~1.0 -> 0~255)
     #normal2: normal (tangent space) (-1.0~1.0 -> 0~255)
     #pos: position
     #uv: uv map array ((u,v)*uv_num)
     #group_id: id of vertex group (not bone id) [id1, id2, ...]
     #weight: weight [id1's weight, id2's weight, ...]
+    '''
     def __init__(self, f, uv_num, use_float32UV):
+        self.vb=f.read(20+uv_num*4*(1+use_float32UV))
+        '''
         self.normal1=read_uint8_array(f, len=4)
         self.normal2=read_uint8_array(f, len=4)
         self.pos=read_vec3_f32(f)
@@ -135,16 +141,22 @@ class Vertex:
             u=read_func(f)
             v=read_func(f)
             self.uv.append([u,v])
+        '''
     
     def read(f, uv_num, use_float32UV):
         return Vertex(f, uv_num, use_float32UV)
     
     def read_influence(self, f, size=8):
+        self.vb2=f.read(size)
+        '''
         size=size//2
         self.group_id=read_uint8_array(f, len=size)
         self.weight=read_uint8_array(f, len=size)
+        '''
 
     def write(f, vertex, use_float32UV):
+        f.write(vertex.vb)
+        '''
         write_uint8_array(f, vertex.normal1)
         write_uint8_array(f, vertex.normal2)
         write_vec3_f32(f, vertex.pos)
@@ -155,6 +167,7 @@ class Vertex:
 
         for uv in vertex.uv:
             write_func(f, uv)
+        '''
 
     def write_array(f, vertices, use_float32UV, with_length=False):
         if with_length:
@@ -163,12 +176,13 @@ class Vertex:
             Vertex.write(f, v, use_float32UV)
 
     def write_influence(f, vertex):
-        write_uint8_array(f, vertex.group_id)
-        write_uint8_array(f, vertex.weight)
+        f.write(vertex.vb2)
+        #write_uint8_array(f, vertex.group_id)
+        #write_uint8_array(f, vertex.weight)
 
 class Face:
     '''
-    We don't need parse face data.
+    We don't need to parse face data.
     Only binary data is needed.
 
     #v: vertex ids (v1,v2,v3)
@@ -228,13 +242,17 @@ class LOD:
         self.face_block_offset=f.tell()
         self.face_uint_type, self.faces, self.face_IB_offset = LOD.read_faces(f, 'faces')
 
-        self.active_bone_ids=read_uint16_array(f)
+        num=read_uint32(f)
+        self.active_bone_ids=f.read(num*2)
+        #read_uint16_array(f)
 
         read_null(f, 'Parse failed! (LOD:null1)')
 
         vertex_num=read_uint32(f)
 
-        self.required_bone_ids=read_uint16_array(f)
+        num=read_uint32(f)
+        self.required_bone_ids=f.read(num*2)
+        #self.required_bone_ids=read_uint16_array(f)
         
         i=read_uint32(f)
         if i==0:
@@ -250,7 +268,8 @@ class LOD:
 
         self.vertex_block_offset=f.tell()
         self.uv_num=read_uint16(f)
-        self.use_float32UV, self.scale, self.influence_size, self.vertices, self.strip_flags, self.VB_offset, self.VB2_offset = LOD.read_vertices(f, vertex_num)
+        self.use_float32UV, self.scale, self.influence_size, self.vertices, \
+            self.strip_flags, self.VB_offset, self.VB2_offset = LOD.read_vertices(f, vertex_num)
         check(len(self.vertices), vertex_num, f, 'Parse failed! (LOD:vert_num)')
 
         u=read_uint8(f)
@@ -273,8 +292,9 @@ class LOD:
             read_const_uint32(f, 16, f)
             size = read_uint32(f)
             self.unk2_buffer_offset=f.tell()
-            self.unk2_buffer=read_array(f, read_16byte, len=size)
-            check(len(self.unk2_buffer), self.unk2_buffer_size, f)
+            #self.unk2_buffer=read_array(f, read_16byte, len=size)
+            self.unk2_buffer=f.read(size*16)
+            check(len(self.unk2_buffer)//16, self.unk2_buffer_size, f)
 
             one=read_uint16(f)
             check(one, 1, f)
@@ -317,11 +337,7 @@ class LOD:
         
         vertex_num = read_uint32(f)
         vb_offset=f.tell()
-        vertices=[]
-
-        for i in range(vertex_num):
-            v=Vertex.read(f, uv_num, use_float32UV)
-            vertices.append(v)
+        vertices=[Vertex.read(f, uv_num, use_float32UV) for i in range(vertex_num)]
 
         strip_flags=read_uint16_array(f, len=2)
         
@@ -357,10 +373,14 @@ class LOD:
         write_uint16(f, 1)
         write_array(f, lod.sections, LODSection.write, with_length=True)
         LOD.write_faces(f, lod.face_uint_type, lod.faces)
-        write_uint16_array(f, lod.active_bone_ids, with_length=True)
+        write_uint32(f, len(lod.active_bone_ids)//2)
+        f.write(lod.active_bone_ids)
+        #write_uint16_array(f, lod.active_bone_ids, with_length=True)
         write_null(f)
         write_uint32(f, len(lod.vertices))
-        write_uint16_array(f, lod.required_bone_ids, with_length=True)
+        write_uint32(f, len(lod.required_bone_ids)//2)
+        f.write(lod.required_bone_ids)
+        #write_uint16_array(f, lod.required_bone_ids, with_length=True)
         write_null(f)
         write_null(f)
         write_uint16(f, lod.uv_num)
@@ -369,8 +389,9 @@ class LOD:
         if lod.unk2_buffer_size>0:
             write_uint16(f, 1)
             write_uint32(f, 16)
-            write_uint32(f, len(lod.unk2_buffer))
-            write_array(f, lod.unk2_buffer, write_16byte)
+            write_uint32(f, len(lod.unk2_buffer)//16)
+            f.write(lod.unk2_buffer)
+            #write_array(f, lod.unk2_buffer, write_16byte)
             write_uint16(f, 1)
             write_uint32(f, 4)
             write_int32_array(f, lod.unknown_VB, with_length=True)
@@ -423,8 +444,9 @@ class LOD:
         return stride, len(self.faces2)*3, self.face2_IB_offset
     
     def dump_unk_buffer(self, f):
-        write_array(f, self.unk2_buffer, write_16byte)
-        return 16, len(self.unk2_buffer), self.unk2_buffer_offset
+        f.write(self.unk2_buffer)
+        #write_array(f, self.unk2_buffer, write_16byte)
+        return 16, len(self.unk2_buffer)//16, self.unk2_buffer_offset
     
     def dump_unk_VB(self, f):
         write_int32_array(f, self.unknown_VB)
@@ -443,6 +465,13 @@ class LOD:
         self.faces=lod.faces
         self.vertices=lod.vertices
         self.faces2=lod.faces2
+        self.influence_size=lod.influence_size
+        #self.strip_flags=lod.strip_flags
+        self.use_float32UV=lod.use_float32UV
+        self.face_uint_type=lod.face_uint_type
+        self.face2_uint_type=lod.face2_uint_type
+        self.active_bone_ids=lod.active_bone_ids
+        self.required_bone_ids=lod.required_bone_ids
         uv_num=self.uv_num
         self.uv_num=lod.uv_num
         self.scale=lod.scale
@@ -467,8 +496,8 @@ class LOD:
             print(pad+'  unknown buffer (offset: {})'.format(self.unknown_offset))
         print(pad+'IB2 (offset: {})'.format(self.face_block2_offset))
         if self.unk2_buffer_size>0:
-            print(pad+'unk2 buffer: size: {}*16'.format(self.unk2_buffer_size))
-            print(pad+'uknown VB: stride: 4')
+            print(pad+'unk_buffer (KDI buffer): size: {}*16'.format(self.unk2_buffer_size))
+            print(pad+'unknown_VB (KDI VB): stride: 4')
 
     def remove_KDI(self):
         self.unk2_buffer_size=0
@@ -484,12 +513,16 @@ class PhysicalMesh: #collider or something? low poly mesh.
 
     def __init__(self, f):
         self.offset=f.tell()
-        self.vertices=read_vec3_f32_array(f)
-        vertex_num=len(self.vertices)
+        vertex_num=read_uint32(f)
+        self.vb=f.read(vertex_num*12)
+        #self.vertices=read_vec3_f32_array(f)
+        #vertex_num=len(self.vertices)
         
         num = read_uint32(f)
         check(num, vertex_num, f, 'Parse failed! (StaticMesh:vertex_num)')
         
+        self.weight_buffer=f.read(num*12)
+        '''
         self.bone_id=[]
         self.weight=[]
         for i in range(num):
@@ -497,6 +530,7 @@ class PhysicalMesh: #collider or something? low poly mesh.
             self.bone_id.append(bone_id)
             weight=read_uint8_array(f, len=4)
             self.weight.append(weight)
+        '''
 
         face_num=read_uint32(f)
         self.faces=Face.read_array(f, len=face_num)
@@ -505,16 +539,21 @@ class PhysicalMesh: #collider or something? low poly mesh.
         return PhysicalMesh(f)
 
     def write(f, mesh):
-        write_vec3_f32_array(f, mesh.vertices, with_length=True)
-        write_uint32(f, len(mesh.bone_id))
+        write_uint32(f, len(mesh.vb)//12)
+        f.write(mesh.vb)
+        #write_vec3_f32_array(f, mesh.vertices, with_length=True)
+        write_uint32(f, len(mesh.weight_buffer)//12)
+        f.write(mesh.weight_buffer)
+        '''
         for bone_id, weight in zip(mesh.bone_id, mesh.weight):
             write_uint16_array(f, bone_id)
             write_uint8_array(f, weight)
+        '''
         write_uint32(f, len(mesh.faces)//6)
         Face.write_array(f, mesh.faces)
 
     def print(self, padding=0):
         pad=' '*padding
         print(pad+'Mesh (offset: {})'.format(self.offset))
-        print(pad+'  vertex_num: {}'.format(len(self.vertices)))
+        print(pad+'  vertex_num: {}'.format(len(self.vb)//12))
         print(pad+'  face_num: {}'.format(len(self.faces)))
