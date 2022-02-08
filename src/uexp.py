@@ -95,12 +95,13 @@ class MeshUexp:
                 offset=f.tell()
                 if export.ignore:
                     export.write_uexp(f)
+                    size=export.size
                 else:
                     if export.id==-1:
                         self.save_main(f)
                         f.write(self.unknown2)
                         size=f.tell()-offset
-                    export.update(size, offset+self.uasset.size)
+                export.update(size, offset+self.uasset.size)
 
             f.write(self.foot)
         self.uasset.save(file[:-4]+'uasset')
