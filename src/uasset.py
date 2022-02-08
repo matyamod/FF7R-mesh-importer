@@ -122,8 +122,8 @@ class UassetHeader:
         print ('  file data offset: {}'.format(self.file_data_offset))
 
 class UassetExport: #104 bytes
-    KNOWN_EXPORTS=['EndEmissiveColorUserData', 'SQEX_BonamikAssetUserData', 'SQEX_KineDriver_AssetUserData']
-    IGNORE=[True, True, True]
+    KNOWN_EXPORTS=['EndEmissiveColorUserData', 'SQEX_BonamikAssetUserData', 'SQEX_KineDriver_AssetUserData', 'SkelMeshBoneAttributeRedirectorUserData']
+    IGNORE=[True, True, True, True]
     #'BodySetup'
     def __init__(self, f):
         self.bin1=f.read(16)

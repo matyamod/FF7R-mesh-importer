@@ -45,10 +45,7 @@ class MeshUexp:
                     raise RuntimeError('Parse failed.')
                 if export.ignore:
                     if verbose:
-                        if export.id==1:
-                            print('Bonamik data (offset: {})'.format(f.tell()))
-                        elif export.id==2:
-                            print('KDI data (offset: {})'.format(f.tell()))
+                        print('{} (offset: {})'.format(export.name, f.tell()))
                         print('  size: {}'.format(export.size))
                     export.read_uexp(f)
                     
