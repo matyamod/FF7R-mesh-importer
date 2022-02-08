@@ -192,7 +192,6 @@ struct unknown{
         int32: ?
         uint32: ?
         uint32*3:0,1,0
-        float32*3:?
-        uint32: null
+        float32*4:?
     }
 }

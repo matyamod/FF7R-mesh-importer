@@ -6,8 +6,7 @@ Notes
 - Able to edit vertices, faces, uv maps, and bone weights.
 - Unable to edit bones.
 - Unable to add materials and uv maps.
-- No limits for the number of polygons.
-- The number of vertices should be smaller than 65536.
+- No limits for the number of polygons and vertices.
 - I think Jordanbtucker will make a more useful tool.
   If he makes the tool, I'll abort this project.
 

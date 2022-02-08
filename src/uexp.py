@@ -4,7 +4,7 @@ import os, json
 #my libs
 from io_util import *
 from mesh import LOD, PhysicalMesh
-from skeleton import Bone, Skeleton
+from skeleton import Skeleton
 from unknown_block import unknown
 from uasset import Uasset
 
@@ -22,6 +22,7 @@ class MeshUexp:
     def load(self, file, verbose=False):
         if file[-4:]!='uexp':
             raise RuntimeError('Not .uexp!')
+        self.verbose=verbose
 
 
         #get name list and export data from .uasset
@@ -29,10 +30,8 @@ class MeshUexp:
         if not os.path.exists(uasset_file):
             raise RuntimeError('FileNotFound: You should put .uasset in the same directory as .uexp. ({})'.format(uasset_file))
         self.uasset = Uasset(uasset_file, verbose=verbose)
-        self.name_list=self.uasset.name_list
-        self.has_emissive_data=self.uasset.has_emissive_data
-        self.has_bonamik_data=self.uasset.has_bonamik_data
-        self.has_kdi_data=self.uasset.has_kdi_data
+        self.name_list=self.uasset.name_list        
+        self.exports=self.uasset.exports
 
         if verbose:
             print('')
@@ -40,85 +39,78 @@ class MeshUexp:
 
         #open .uexp
         with open(file, 'rb') as f:
-            size=get_size(f)
 
-            #emissive data
-            if self.has_emissive_data:
-                self.emissive_head=f.read(2)
-                check(self.emissive_head, b'\x00\x03')
-                self.emissive_int=read_int32(f)
-                read_null(f)
-
-            #unknwon data
-            self.unknown=unknown.read(f)
-            if verbose:
-                self.unknown.print()
-
-            #skeleton data
-            self.skeleton=Skeleton.read(f)
-            self.skeleton.name_bones(self.name_list)
-            if verbose:
-                self.skeleton.print()
-
-            #LOD data
-            LOD_num=read_uint32(f)
-            self.LOD=[]
-            for i in range(LOD_num):
-                lod=LOD.read_ff7r(f)
-                if verbose:
-                    lod.print(str(i), self.skeleton.bones)
-                self.LOD.append(lod)
-
-            #mesh data?
-            num=read_uint32(f)
-            self.mesh_or_something=[]
-            for i in range(num):
-                mesh=PhysicalMesh.read(f)
-                self.mesh_or_something.append(mesh)
-                if verbose:
-                    mesh.print()
-
-            #unknwon data
-            if size-f.tell()>8:
-                self.unknown2=f.read(8)
-            else:
-                self.unknown2=f.read(4)
-
-            if self.has_bonamik_data:
-                offset=f.tell()
-                self.bonamik_data=f.read(14)
-                if verbose:
-                    print('Bonamik data (offset: {})'.format(offset))
-
-            if self.has_kdi_data:
-                offset=f.tell()
-                self.kdi_data=f.read(28)
-                if verbose:
-                    print('KDI data (offset: {})'.format(offset))
+            for export in self.exports:
+                if f.tell()+self.uasset.size!=export.offset:
+                    raise RuntimeError('Parse failed.')
+                if export.ignore:
+                    if verbose:
+                        print('{} (offset: {})'.format(export.name, f.tell()))
+                        print('  size: {}'.format(export.size))
+                    export.read_uexp(f)
+                    
+                else:
+                    if export.id==-1:
+                        self.read_main(f)
+                        self.unknown2=f.read(export.offset+export.size-f.tell()-self.uasset.size)
 
             #footer
             self.foot=f.read()
-            check(self.foot[-4:], MeshUexp.UNREAL_SIGNATURE, f, 'Parse failed. (foot)')
+            check(self.foot, MeshUexp.UNREAL_SIGNATURE, f, 'Parse failed. (foot)')
+
+    def read_main(self, f):
+        #unknwon data
+        self.unknown=unknown.read(f)
+        if self.verbose:
+            self.unknown.print()
+
+        #skeleton data
+        self.skeleton=Skeleton.read(f)
+        self.skeleton.name_bones(self.name_list)
+        if self.verbose:
+            self.skeleton.print()
+
+        #LOD data
+        LOD_num=read_uint32(f)
+        self.LOD=[]
+        for i in range(LOD_num):
+            lod=LOD.read_ff7r(f)
+            if self.verbose:
+                lod.print(str(i), self.skeleton.bones)
+            self.LOD.append(lod)
+
+        #mesh data?
+        num=read_uint32(f)
+        self.mesh_or_something=[]
+        for i in range(num):
+            mesh=PhysicalMesh.read(f)
+            self.mesh_or_something.append(mesh)
+            if self.verbose:
+                mesh.print()
 
     def save(self, file):
         print('Saving '+file+'...')
         with open(file, 'wb') as f:
-            if self.has_emissive_data:
-                f.write(self.emissive_head)
-                write_int32(f, self.emissive_int)
-                write_null(f)
-            unknown.write(f, self.unknown)
-            Skeleton.write(f, self.skeleton)
-            write_array(f, self.LOD, LOD.write, with_length=True)
-            write_array(f, self.mesh_or_something, PhysicalMesh.write, with_length=True)
-            f.write(self.unknown2)
-            if self.has_bonamik_data:
-                f.write(self.bonamik_data)
-            if self.has_kdi_data:
-                f.write(self.kdi_data)
+            for export in self.exports:
+                offset=f.tell()
+                if export.ignore:
+                    export.write_uexp(f)
+                    size=export.size
+                else:
+                    if export.id==-1:
+                        self.save_main(f)
+                        f.write(self.unknown2)
+                        size=f.tell()-offset
+                export.update(size, offset+self.uasset.size)
+
             f.write(self.foot)
-            size=f.tell()
-        self.uasset.save(file[:-4]+'uasset', size, len(self.foot))
+        self.uasset.save(file[:-4]+'uasset')
+
+    def save_main(self, f):
+        unknown.write(f, self.unknown)
+        Skeleton.write(f, self.skeleton)
+        write_array(f, self.LOD, LOD.write, with_length=True)
+        write_array(f, self.mesh_or_something, PhysicalMesh.write, with_length=True)
 
     def remove_LODs(self):
         num=len(self.LOD)

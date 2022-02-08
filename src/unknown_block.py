@@ -51,8 +51,7 @@ class unknown_sub2:
         self.unk_uint=read_uint32(f)
         unk=read_uint32_array(f, len=3)
         check(unk, [0,1,0], f, 'Parse failed.')
-        self.unk_vec=read_vec3_f32(f)
-        read_null(f)
+        self.unk_vec=read_float32_array(f, len=4)
 
     def read(f):
         return unknown_sub2(f)
@@ -61,8 +60,7 @@ class unknown_sub2:
         write_int32(f, unk_sub2.unk_int)
         write_uint32(f, unk_sub2.unk_uint)
         write_uint32_array(f, [0,1,0])
-        write_vec3_f32(f, unk_sub2.unk_vec)
-        write_null(f)
+        write_float32_array(f, unk_sub2.unk_vec)
 
     def print(self, padding=2):
         pad=' '*padding

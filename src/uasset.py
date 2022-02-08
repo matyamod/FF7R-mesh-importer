@@ -121,11 +121,64 @@ class UassetHeader:
         print ('  padding offset: {}'.format(self.padding_offset))
         print ('  file data offset: {}'.format(self.file_data_offset))
 
+class UassetExport: #104 bytes
+    KNOWN_EXPORTS=['EndEmissiveColorUserData', 'SQEX_BonamikAssetUserData', 'SQEX_KineDriver_AssetUserData', 'SkelMeshBoneAttributeRedirectorUserData']
+    IGNORE=[True, True, True, True]
+    #'BodySetup'
+    def __init__(self, f):
+        self.bin1=f.read(16)
+        self.name_id=read_uint32(f)
+        self.bin2=f.read(8)
+        self.size=read_uint32(f)
+        read_null(f)
+        self.offset=read_uint32(f)
+        self.bin3=f.read(64)
+
+    def read(f):
+        return UassetExport(f)
+    
+    def write(f, export):
+        f.write(export.bin1)
+        write_uint32(f, export.name_id)
+        f.write(export.bin2)
+        write_uint32(f, export.size)
+        write_null(f)
+        write_uint32(f, export.offset)
+        f.write(export.bin3)
+
+    def update(self, size, offset):
+        self.size=size
+        self.offset=offset
+
+    def name_exports(exports, name_list, file_name):
+        for export in exports:
+            name=name_list[export.name_id]
+
+            if name in UassetExport.KNOWN_EXPORTS:
+                export.id=UassetExport.KNOWN_EXPORTS.index(name)
+                export.ignore=UassetExport.IGNORE[export.id]
+            elif name in file_name:
+                export.id=-1
+                export.ignore=False
+            else:
+                raise RuntimeError('Unsupported assets. ({})'.format(name))
+
+            export.name=name
+
+    def read_uexp(self, f):
+        self.bin=f.read(self.size)
+
+    def write_uexp(self, f):
+        f.write(self.bin)
+
+    def print(self, padding=2):
+        pad=' '*padding
+        print(pad+self.name)
+        print(pad+'  size: {}'.format(self.size))
+        print(pad+'  offset: {}'.format(self.offset))
+
+
 class Uasset:
-    NAME_EMISSIVE='EndEmissiveColorUserData'
-    NAME_BONAMIK='SQEX_BonamikAssetUserData'
-    NAME_KDI='SQEX_KineDriver_AssetUserData'
-    NAME_BODY='BodySetup'
 
     def __init__(self, uasset_file, verbose=False):
         if uasset_file[-7:]!='.uasset':
@@ -157,32 +210,18 @@ class Uasset:
             self.flag_list.append(flag)
         offset=f.tell()
         self.bin2=f.read(self.header.export_offset-offset)
-        self.export=[]
-        self.export_name=[]
-        self.has_emissive_data=False
-        self.has_bonamik_data=False
-        self.has_kdi_data=False
-        for i in range(self.header.export_num):
-            export=f.read(104)
-            export_name=self.name_list[int.from_bytes(export[16:20], "little")]
-            if export_name==Uasset.NAME_EMISSIVE:
-                self.has_emissive_data=True
-            elif export_name==Uasset.NAME_BONAMIK:
-                self.has_bonamik_data=True
-            elif export_name==Uasset.NAME_KDI:
-                self.has_kdi_data=True
-            elif export_name==Uasset.NAME_BODY:
-                raise RuntimeError('Unsupported assets.')
-            self.export.append(export)
-            self.export_name.append(export_name)
+        self.exports=read_array(f, UassetExport.read, len=self.header.export_num)
+        UassetExport.name_exports(self.exports, self.name_list, self.file)
+
         if verbose:
             print('Export Name List')
-            for name in self.export_name:
-                print('  {}'.format(name))
+            for export in self.exports:
+                export.print()
+
         self.bin3=f.read()
         f.close()
     
-    def save(self, file, uexp_size, foot_size):
+    def save(self, file):
         print('Saving '+file+'...')
         with open(file, 'wb') as f:
             UassetHeader.write(f, self.header)
@@ -192,30 +231,7 @@ class Uasset:
                 f.write(flag)
 
             f.write(self.bin2)
-
-            for i in range(len(self.export)):
-                export=self.export[i]
-                export_name=self.export_name[i]
-                offset=0
-                num=0
-                if export_name==Uasset.NAME_EMISSIVE:
-                    f.write(export)
-                    continue
-                elif export_name in self.file:
-                    offset=28
-                    #uexp size without emissive data and unreal signature
-                    num=uexp_size-foot_size-self.has_emissive_data*10\
-                        -self.has_bonamik_data*14-self.has_kdi_data*28
-
-                elif export_name==Uasset.NAME_BONAMIK:
-                    offset=36
-                    num=self.size+uexp_size-self.has_bonamik_data*14-self.has_kdi_data*28-foot_size
-                elif export_name==Uasset.NAME_KDI:
-                    offset=36
-                    num=self.size+uexp_size-self.has_kdi_data*28-foot_size
-                else:
-                    raise RuntimeError('Unsupported export data.')
-                f.write(export[:offset])
-                write_uint32(f, num)
-                f.write(export[offset+4:])
+            
+            for export in self.exports:
+                UassetExport.write(f, export)
             f.write(self.bin3)
