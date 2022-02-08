@@ -16,9 +16,7 @@ class Bone:
         return Bone(f)
 
     def read_pos(self, f):
-        self.rot=read_float32_array(f, len=4)
-        self.pos=read_vec3_f32(f)
-        self.size=read_vec3_f32(f)
+        self.pos=f.read(40)
 
     def write(f, bone):
         write_uint32(f, bone.name_id)
@@ -26,9 +24,10 @@ class Bone:
         write_int32(f, bone.parent)
 
     def write_pos(f, bone):
-        write_float32_array(f, bone.rot)
-        write_vec3_f32(f, bone.pos)
-        write_vec3_f32(f, bone.size)
+        f.write(bone.pos)
+
+    def update(self, bone):
+        self.pos=bone.pos
 
     def name(self, name):
         self.name=name
@@ -88,6 +87,10 @@ class Skeleton:
 
     def name_bones(self, name_list):
         Bone.name_bones(self.bones, name_list)
+
+    def import_bones(self, bones):
+        for self_bone, new_bone in zip(self.bones, bones):
+            self_bone.update(new_bone)
 
     def print(self, padding=0):
         pad=' '*padding

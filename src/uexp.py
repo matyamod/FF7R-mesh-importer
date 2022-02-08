@@ -119,10 +119,14 @@ class MeshUexp:
         self.LOD=[self.LOD[0]]
         print('LOD1~{} has been removed.'.format(num-1))
 
-    def import_LODs(self, mesh_uexp):
+    def import_LODs(self, mesh_uexp, only_mesh=False):
         if len(self.skeleton.bones)!=len(mesh_uexp.skeleton.bones):
             raise RuntimeError('Skeletons are not the same.')
-            
+        
+        if not only_mesh:
+            self.skeleton.import_bones(mesh_uexp.skeleton.bones)
+            print('Bone positions and rotations have been imported.')
+
         LOD_num_self=len(self.LOD)
         LOD_num=min(LOD_num_self, len(mesh_uexp.LOD))
         if LOD_num<LOD_num_self:

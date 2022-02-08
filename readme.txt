@@ -30,6 +30,7 @@ python main.py ff7r_file [ue4_18_file] save_folder [--mode=mode] [--verbose]
     'dumpBuffers': Dumps buffers LODs have. Only works for FF7R's assets.
     'valid': Checks if the script can parse or not. Only works for FF7R's assets
 - --verbose: Shows info.
+- --only_mesh: Does not import bones
 
 
 How to Import LODs
