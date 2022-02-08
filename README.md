@@ -10,7 +10,7 @@ A tool for importing skeletal meshes into uassets extracted from FF7R
 
 ## Supported Assets
 
-- Cloud (standard outfit) (You need to remove KDI before importing custom mesh)
+- Character assets (You need to remove KDI)
 - Weapon assets without `WE90**`
 
 
@@ -24,9 +24,10 @@ python main.py ff7r_file [ue4_18_file] save_folder [--mode=mode] [--verbose]
 - `ue4_18_file`: .uexp file exported from UE4.18
 - `save_folder`: New uasset files will be generated here.
 - `mode`: The following modes are available.
-   - `import`: Imports LODs. Default mode.
+   - `import`: Imports LODs and bones. Default mode.
    - `removeLOD`: Removes all LODs without LOD0. Only works for FF7R's assets.
    - `removeKDI`: Removes KDI buffers. Only works for FF7R's assets.
    - `dumpBuffers`: Dumps buffers LODs have. Only works for FF7R's assets.
    - `valid`: Checks if the script can parse or not. Only works for FF7R's assets.
 - `--verbose`: Shows log.
+- `--only_mesh`: Does not import bones.
