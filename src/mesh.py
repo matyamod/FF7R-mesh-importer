@@ -9,7 +9,7 @@ class LODSection:
     # vertex_group: Id of weight painted bones. Bone influences are specified by vertex_group's id (not bone id).
     # vertex_num: the number of vertices in this section
 
-    UNK=[b'\x00\xFF\xFF\xCD', b'\x00\xFF\xFF\x2B', b'\x00\xFF\xFF\xDD']
+    UNK=b'\x00\xFF\xFF'
     CorrespondClothAssetIndex=b'\xCD\xCD'
 
     def __init__(self, f, ff7r=True):
@@ -25,8 +25,9 @@ class LODSection:
 
         self.face_num = read_uint32(f)
         read_null(f, 'Parse failed! (LOD_Section:Number of Faces)')
-        self.unk=f.read(4)
-        check(self.unk in LODSection.UNK, True, f, 'Parse failed! (LOD_Section:1)')
+        unk=f.read(3)
+        check(unk, LODSection.UNK, f, 'Parse failed! (LOD_Section:1)')
+        self.unk=f.read(1)
         read_null(f, 'Parse failed! (LOD_Section:2)')
         read_const_uint32(f, 1, 'Parse failed! (LOD_Section:3)')
         self.first_vertex_id=read_uint32(f)
@@ -67,6 +68,7 @@ class LODSection:
         write_uint32(f, section.first_face_id*3)
         write_uint32(f, section.face_num)
         write_null(f)
+        f.write(LODSection.UNK)
         f.write(section.unk)
         write_uint32_array(f,[0,1])
         write_uint32(f, section.first_vertex_id)
@@ -90,6 +92,7 @@ class LODSection:
         self.first_vertex_id=section.first_vertex_id
         self.vertex_num=section.vertex_num
         self.max_bone_influences=section.max_bone_influences
+        self.unk=section.unk
 
     def remove_KDI(self):
         self.unk1=0

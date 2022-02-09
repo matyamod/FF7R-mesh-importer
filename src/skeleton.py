@@ -16,6 +16,7 @@ class Bone:
         return Bone(f)
 
     def read_pos(self, f):
+        #self.pos=read_float32_array(f, len=10)
         self.pos=f.read(40)
 
     def write(f, bone):
@@ -24,6 +25,7 @@ class Bone:
         write_int32(f, bone.parent)
 
     def write_pos(f, bone):
+        #write_float32_array(f, bone.pos)
         f.write(bone.pos)
 
     def update(self, bone):
@@ -90,6 +92,9 @@ class Skeleton:
 
     def import_bones(self, bones):
         for self_bone, new_bone in zip(self.bones, bones):
+            #if self_bone.name!=new_bone.name:
+            #    raise RuntimeError("")
+            #print('{} -> {}'.format(self_bone.pos[4:7], new_bone.pos[4:7]))
             self_bone.update(new_bone)
 
     def print(self, padding=0):
