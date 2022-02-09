@@ -14,9 +14,9 @@ def get_size(file):
 def check(actual, expected, f=None, msg=''):
     if actual!=expected:
         if f is not None:
-            print('offset: {}'.format(f.tell()))
-        print('actual: {}'.format(actual))
-        print('expected: {}'.format(expected))
+            logger.log('offset: {}'.format(f.tell()))
+        logger.log('actual: {}'.format(actual))
+        logger.log('expected: {}'.format(expected))
         logger.error(msg)
 
 def read_uint32(file):

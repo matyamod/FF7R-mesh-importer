@@ -74,7 +74,7 @@ class Skeleton:
 
         #read position
         bone_num=read_uint32(f)
-        check(bone_num, len(self.bones), f, 'Parse failed! (Skeleton)')
+        check(bone_num, len(self.bones), f, 'Parse failed! (Skeleton: bone number)')
         for b in self.bones:
             b.read_pos(f)
 
