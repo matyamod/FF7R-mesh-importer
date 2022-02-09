@@ -484,6 +484,12 @@ class LOD:
         self.uv_num=lod.uv_num
         self.scale=lod.scale
         self.strip_flags=lod.strip_flags
+        if self.unk2_buffer_size>0:
+            if len(self.vertices)>=len(self.unknown_VB):
+                self.unknown_VB=self.unknown_VB[:len(self.vertices)]
+            else:
+                self.unknown_VB=self.unknown_VB+[-1]*(len(self.vertices)-len(self.unknown_VB))
+
         print('LOD{} has been imported.'.format(name))
         print('  faces: {} -> {}'.format(f_num1, f_num2))
         print('  vertices: {} -> {}'.format(v_num1, v_num2))
