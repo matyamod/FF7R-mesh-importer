@@ -1,4 +1,5 @@
 from io_util import *
+from logger import logger
 
 class Bone:
     #name_id: id of name list
@@ -44,7 +45,7 @@ class Bone:
                 parent_name='None'
             else:
                 parent_name=bones[parent_id].name
-            print(pad+'id: '+str(i)+', name: '+name+', parent: '+parent_name)
+            logger.log(pad+'id: '+str(i)+', name: '+name+', parent: '+parent_name)
             i+=1
 
     def name_bones(bones, name_list):
@@ -93,12 +94,12 @@ class Skeleton:
     def import_bones(self, bones):
         for self_bone, new_bone in zip(self.bones, bones):
             #if self_bone.name!=new_bone.name:
-            #    raise RuntimeError("")
+            #    logger.error("")
             #print('{} -> {}'.format(self_bone.pos[4:7], new_bone.pos[4:7]))
             self_bone.update(new_bone)
 
     def print(self, padding=0):
         pad=' '*padding
-        print(pad+'Skeleton (offset: {})'.format(self.offset))
-        print(pad+'  bone_num: {}'.format(len(self.bones)))
+        logger.log(pad+'Skeleton (offset: {})'.format(self.offset))
+        logger.log(pad+'  bone_num: {}'.format(len(self.bones)))
         Bone.print_bones(self.bones, padding=2+padding)

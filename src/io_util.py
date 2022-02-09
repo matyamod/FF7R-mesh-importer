@@ -1,4 +1,5 @@
 import os, struct
+from logger import logger
 
 def mkdir(dir):
     os.makedirs(dir, exist_ok=True)
@@ -16,7 +17,7 @@ def check(actual, expected, f=None, msg=''):
             print('offset: {}'.format(f.tell()))
         print('actual: {}'.format(actual))
         print('expected: {}'.format(expected))
-        raise RuntimeError(msg)
+        logger.error(msg)
 
 def read_uint32(file):
     bin=file.read(4)
@@ -182,7 +183,7 @@ def compare(file1,file2):
     if i==size-1:
         print('Same data!')
     else:
-        raise RuntimeError('Not same :{}'.format(i))
+        logger.error('Not same :{}'.format(i))
 
     if f1_size!=f2_size:
-        raise RuntimeError('Not same size. ({}, {})'.format(f1_size, f2_size))
+        logger.error('Not same size. ({}, {})'.format(f1_size, f2_size))

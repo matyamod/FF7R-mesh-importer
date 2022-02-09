@@ -1,7 +1,8 @@
-ver 0.1.2.a
+ver 0.1.3
 - optimize some functions
 - add support for importing the stride of VB2
 - add the function to import bones
+- add logger for saving log as log.txt
 
 ver 0.1.2
 - add 'dumpBuffer' mode
