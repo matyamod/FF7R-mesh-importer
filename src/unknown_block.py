@@ -1,4 +1,5 @@
 from io_util import *
+from logger import logger
 
 class unknown_sub:
     UNK=b'\x01\x00\x00\x70\x42\x03\x03\x03\x03\x00\x00\xC8\x42\x04\x00\x00\x00'
@@ -42,8 +43,8 @@ class unknown_sub:
 
     def print(self, padding=2):
         pad=' '*padding
-        print(pad+'LOD data?')
-        print(pad+'  material_num?: {}'.format(self.num))
+        logger.log(pad+'LOD data?')
+        logger.log(pad+'  material_num?: {}'.format(self.num))
         
 class unknown_sub2:
     def __init__(self, f):
@@ -64,10 +65,10 @@ class unknown_sub2:
 
     def print(self, padding=2):
         pad=' '*padding
-        print(pad+'unknown_sub2')
-        print(pad+'  unk_int: {}'.format(self.unk_int))
-        print(pad+'  unk_uint: {}'.format(self.unk_uint))
-        print(pad+'  unk_vec: {}'.format(self.unk_vec))
+        logger.log(pad+'unknown_sub2')
+        logger.log(pad+'  unk_int: {}'.format(self.unk_int))
+        logger.log(pad+'  unk_uint: {}'.format(self.unk_uint))
+        logger.log(pad+'  unk_vec: {}'.format(self.unk_vec))
 
 class unknown:
     def __init__(self, f):
@@ -79,7 +80,7 @@ class unknown:
             self.unk_u8_ary.append(u8)
             u8=read_uint8(f)
             if len(self.unk_u8_ary)>15:
-                raise RuntimeError('Parse failed.')
+                logger.error('Parse failed.')
         f.seek(-1,1)
         
         self.unk_int2=read_int32(f)
@@ -151,16 +152,16 @@ class unknown:
 
     def print(self, padding=0):
         pad=' '*padding
-        print(pad+'unknown (offset: {})'.format(self.offset))
-        print(pad+'  unk_u8_ary: {}'.format(self.unk_u8_ary))
-        print(pad+'  unk_int2: {}'.format(self.unk_int2))
-        print(pad+'  LOD_num: {}'.format(self.LOD_num))
-        print(pad+'  unk_byte2: {}'.format(self.unk_byte2))
+        logger.log(pad+'unknown (offset: {})'.format(self.offset))
+        logger.log(pad+'  unk_u8_ary: {}'.format(self.unk_u8_ary))
+        logger.log(pad+'  unk_int2: {}'.format(self.unk_int2))
+        logger.log(pad+'  LOD_num: {}'.format(self.LOD_num))
+        logger.log(pad+'  unk_byte2: {}'.format(self.unk_byte2))
         for us in self.unk_sub:
             us.print(padding=padding+2)
-        print(pad+'  unk_int: {}'.format(self.unk_int))
-        print(pad+'  unk_u8: {}'.format(self.unk_u8))
-        print(pad+'  unk_uint: {}'.format(self.unk_uint))
-        print(pad+'  unk_f32_2: {}'.format(self.unk_f32_2))
+        logger.log(pad+'  unk_int: {}'.format(self.unk_int))
+        logger.log(pad+'  unk_u8: {}'.format(self.unk_u8))
+        logger.log(pad+'  unk_uint: {}'.format(self.unk_uint))
+        logger.log(pad+'  unk_f32_2: {}'.format(self.unk_f32_2))
         for us in self.unk_sub2:
             us.print(padding=padding+2)

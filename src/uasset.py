@@ -1,5 +1,6 @@
 
 from io_util import *
+from logger import logger
 
 '''
 FILE HEADER
@@ -108,18 +109,18 @@ class UassetHeader:
 
 
     def print(self):
-        print ('Header info')
-        print ('  version: {}'.format(self.version))
-        print ('  file size: {}'.format(self.file_size))
-        print ('  number of names: {}'.format(self.name_num))
-        print ('  name directory offset: {}'.format(self.name_offset))
-        print ('  number of exports: {}'.format(self.export_num))
-        print ('  export directory offset: {}'.format(self.export_offset))
-        print ('  number of imports: {}'.format(self.import_num))
-        print ('  import directory offset: {}'.format(self.import_offset))
-        print ('  guid hash: {}'.format(self.guid_hash))
-        print ('  padding offset: {}'.format(self.padding_offset))
-        print ('  file data offset: {}'.format(self.file_data_offset))
+        logger.log('Header info')
+        logger.log('  version: {}'.format(self.version))
+        logger.log('  file size: {}'.format(self.file_size))
+        logger.log('  number of names: {}'.format(self.name_num))
+        logger.log('  name directory offset: {}'.format(self.name_offset))
+        logger.log('  number of exports: {}'.format(self.export_num))
+        logger.log('  export directory offset: {}'.format(self.export_offset))
+        logger.log('  number of imports: {}'.format(self.import_num))
+        logger.log('  import directory offset: {}'.format(self.import_offset))
+        logger.log('  guid hash: {}'.format(self.guid_hash))
+        logger.log('  padding offset: {}'.format(self.padding_offset))
+        logger.log('  file data offset: {}'.format(self.file_data_offset))
 
 class UassetExport: #104 bytes
     KNOWN_EXPORTS=['EndEmissiveColorUserData', 'SQEX_BonamikAssetUserData', 'SQEX_KineDriver_AssetUserData', 'SkelMeshBoneAttributeRedirectorUserData']
@@ -161,7 +162,7 @@ class UassetExport: #104 bytes
                 export.id=-1
                 export.ignore=False
             else:
-                raise RuntimeError('Unsupported assets. ({})'.format(name))
+                logger.error('Unsupported assets. ({})'.format(name))
 
             export.name=name
 
@@ -173,30 +174,28 @@ class UassetExport: #104 bytes
 
     def print(self, padding=2):
         pad=' '*padding
-        print(pad+self.name)
-        print(pad+'  size: {}'.format(self.size))
-        print(pad+'  offset: {}'.format(self.offset))
+        logger.log(pad+self.name)
+        logger.log(pad+'  size: {}'.format(self.size))
+        logger.log(pad+'  offset: {}'.format(self.offset))
 
 
 class Uasset:
 
-    def __init__(self, uasset_file, verbose=False):
+    def __init__(self, uasset_file):
         if uasset_file[-7:]!='.uasset':
-            raise RuntimeError('File extension error (not .uasset)')
+            logger.error('File extension error (not .uasset)')
 
-        print('Loading '+uasset_file+'...')
+        logger.log('Loading '+uasset_file+'...', ignore_verbose=True)
 
         self.file=os.path.basename(uasset_file)[:-7]
         f=open(uasset_file, 'rb')
         self.size=get_size(f)
         self.header=UassetHeader.read(f)
         self.bin1 = f.read(self.header.name_offset-193)
-        if verbose:
-            print('size: {}'.format(self.size))
-            self.header.print()
+        logger.log('size: {}'.format(self.size))
+        self.header.print()
         
-        if verbose:
-            print('Name list')
+        logger.log('Name list')
         
         self.name_list = []
         self.flag_list = []
@@ -204,8 +203,7 @@ class Uasset:
             name = read_str(f)
             flag = f.read(4)
 
-            if verbose:
-                print('  {}: {}'.format(i, name))
+            logger.log('  {}: {}'.format(i, name))
             self.name_list.append(name)
             self.flag_list.append(flag)
         offset=f.tell()
@@ -213,16 +211,15 @@ class Uasset:
         self.exports=read_array(f, UassetExport.read, len=self.header.export_num)
         UassetExport.name_exports(self.exports, self.name_list, self.file)
 
-        if verbose:
-            print('Export Name List')
-            for export in self.exports:
-                export.print()
+        logger.log('Export Name List')
+        for export in self.exports:
+            export.print()
 
         self.bin3=f.read()
         f.close()
     
     def save(self, file):
-        print('Saving '+file+'...')
+        logger.log('Saving '+file+'...')
         with open(file, 'wb') as f:
             UassetHeader.write(f, self.header)
             f.write(self.bin1)

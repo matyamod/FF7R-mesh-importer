@@ -1,5 +1,5 @@
-from asyncore import read
 from io_util import *
+from logger import logger
 
 class LODSection:
     # material_id: material id
@@ -9,7 +9,7 @@ class LODSection:
     # vertex_group: Id of weight painted bones. Bone influences are specified by vertex_group's id (not bone id).
     # vertex_num: the number of vertices in this section
 
-    UNK=[b'\x00\xFF\xFF\xCD', b'\x00\xFF\xFF\x2B', b'\x00\xFF\xFF\xDD']
+    UNK=b'\x00\xFF\xFF'
     CorrespondClothAssetIndex=b'\xCD\xCD'
 
     def __init__(self, f, ff7r=True):
@@ -25,8 +25,9 @@ class LODSection:
 
         self.face_num = read_uint32(f)
         read_null(f, 'Parse failed! (LOD_Section:Number of Faces)')
-        self.unk=f.read(4)
-        check(self.unk in LODSection.UNK, True, f, 'Parse failed! (LOD_Section:1)')
+        unk=f.read(3)
+        check(unk, LODSection.UNK, f, 'Parse failed! (LOD_Section:1)')
+        self.unk=f.read(1)
         read_null(f, 'Parse failed! (LOD_Section:2)')
         read_const_uint32(f, 1, 'Parse failed! (LOD_Section:3)')
         self.first_vertex_id=read_uint32(f)
@@ -67,6 +68,7 @@ class LODSection:
         write_uint32(f, section.first_face_id*3)
         write_uint32(f, section.face_num)
         write_null(f)
+        f.write(LODSection.UNK)
         f.write(section.unk)
         write_uint32_array(f,[0,1])
         write_uint32(f, section.first_vertex_id)
@@ -90,6 +92,7 @@ class LODSection:
         self.first_vertex_id=section.first_vertex_id
         self.vertex_num=section.vertex_num
         self.max_bone_influences=section.max_bone_influences
+        self.unk=section.unk
 
     def remove_KDI(self):
         self.unk1=0
@@ -101,18 +104,18 @@ class LODSection:
 
     def print(self, name, bones, padding=2):
         pad = ' '*padding
-        print(pad+'section '+name)
-        print(pad+'  material_id: {}'.format(self.material_id))
-        print(pad+'  first_face_id: {}'.format(self.first_face_id))
-        print(pad+'  face_num: {}'.format(self.face_num))
-        print(pad+'  first_vertex_id: {}'.format(self.first_vertex_id))
+        logger.log(pad+'section '+name)
+        logger.log(pad+'  material_id: {}'.format(self.material_id))
+        logger.log(pad+'  first_face_id: {}'.format(self.first_face_id))
+        logger.log(pad+'  face_num: {}'.format(self.face_num))
+        logger.log(pad+'  first_vertex_id: {}'.format(self.first_vertex_id))
         vg_name=LODSection.bone_ids_to_name(self.vertex_group, bones)
-        print(pad+'  vertex_group: {}'.format(vg_name))
-        print(pad+'  vertex_num: {}'.format(self.vertex_num))
-        print(pad+'  max bone influences: {}'.format(self.max_bone_influences))
+        logger.log(pad+'  vertex_group: {}'.format(vg_name))
+        logger.log(pad+'  vertex_num: {}'.format(self.vertex_num))
+        logger.log(pad+'  max bone influences: {}'.format(self.max_bone_influences))
         if self.unk2 is not None:
-            print(pad+'  KDI flag: {}'.format(self.unk1==True))
-            print(pad+'  vertices influenced by KDI: {}'.format(len(self.unk2)//16))
+            logger.log(pad+'  KDI flag: {}'.format(self.unk1==True))
+            logger.log(pad+'  vertices influenced by KDI: {}'.format(len(self.unk2)//16))
 
 class Vertex:
     '''
@@ -459,7 +462,7 @@ class LOD:
 
     def import_LOD(self, lod, name=''):
         if len(self.sections)<len(lod.sections):
-            raise RuntimeError('too many materials')
+            logger.error('too many materials')
         f_num1=len(self.faces)
         f_num2=len(lod.faces)
         v_num1=len(self.vertices)
@@ -481,29 +484,35 @@ class LOD:
         self.uv_num=lod.uv_num
         self.scale=lod.scale
         self.strip_flags=lod.strip_flags
-        print('LOD{} has been imported.'.format(name))
-        print('  faces: {} -> {}'.format(f_num1, f_num2))
-        print('  vertices: {} -> {}'.format(v_num1, v_num2))
-        print('  uv maps: {} -> {}'.format(uv_num, self.uv_num))
+        if self.unk2_buffer_size>0:
+            if len(self.vertices)>=len(self.unknown_VB):
+                self.unknown_VB=self.unknown_VB[:len(self.vertices)]
+            else:
+                self.unknown_VB=self.unknown_VB+[-1]*(len(self.vertices)-len(self.unknown_VB))
+
+        logger.log('LOD{} has been imported.'.format(name))
+        logger.log('  faces: {} -> {}'.format(f_num1, f_num2))
+        logger.log('  vertices: {} -> {}'.format(v_num1, v_num2))
+        logger.log('  uv maps: {} -> {}'.format(uv_num, self.uv_num))
 
     def print(self, name, bones, padding=0):
         pad=' '*padding
-        print(pad+'LOD '+name+' (offset: {})'.format(self.offset))
+        logger.log(pad+'LOD '+name+' (offset: {})'.format(self.offset))
         for i in range(len(self.sections)):
             self.sections[i].print(str(i),bones, padding=padding+2)
         pad+=' '*2
-        print(pad+'face IB (offset: {})'.format(self.face_block_offset))
-        print(pad+'  face num: {}'.format(len(self.faces)))
-        print(pad+'vertex data (offset: {})'.format(self.vertex_block_offset))
-        print(pad+'  uv num: {}'.format(self.uv_num))
-        print(pad+'  vertex num: {}'.format(len(self.vertices)))
-        print(pad+'  stride of weight buffer: {}'.format(self.influence_size))
+        logger.log(pad+'face IB (offset: {})'.format(self.face_block_offset))
+        logger.log(pad+'  face num: {}'.format(len(self.faces)))
+        logger.log(pad+'vertex data (offset: {})'.format(self.vertex_block_offset))
+        logger.log(pad+'  uv num: {}'.format(self.uv_num))
+        logger.log(pad+'  vertex num: {}'.format(len(self.vertices)))
+        logger.log(pad+'  stride of weight buffer: {}'.format(self.influence_size))
         if self.unknown_vertex_data is not None:
-            print(pad+'  unknown buffer (offset: {})'.format(self.unknown_offset))
-        print(pad+'IB2 (offset: {})'.format(self.face_block2_offset))
+            logger.log(pad+'  unknown buffer (offset: {})'.format(self.unknown_offset))
+        logger.log(pad+'IB2 (offset: {})'.format(self.face_block2_offset))
         if self.unk2_buffer_size>0:
-            print(pad+'unk_buffer (KDI buffer): size: {}*16'.format(self.unk2_buffer_size))
-            print(pad+'unknown_VB (KDI VB): stride: 4')
+            logger.log(pad+'unk_buffer (KDI buffer): size: {}*16'.format(self.unk2_buffer_size))
+            logger.log(pad+'unknown_VB (KDI VB): stride: 4')
 
     def remove_KDI(self):
         self.unk2_buffer_size=0
@@ -518,7 +527,7 @@ class LOD:
         self.influence_size=8
         self.strip_flags[1]=0
 
-        print("lower buffer")
+        logger.log("lower buffer")
 
         for section in self.sections:
             section.max_bone_influences=min(section.max_bone_influences, 4)
@@ -574,6 +583,6 @@ class PhysicalMesh: #collider or something? low poly mesh.
 
     def print(self, padding=0):
         pad=' '*padding
-        print(pad+'Mesh (offset: {})'.format(self.offset))
-        print(pad+'  vertex_num: {}'.format(len(self.vb)//12))
-        print(pad+'  face_num: {}'.format(len(self.faces)))
+        logger.log(pad+'Mesh (offset: {})'.format(self.offset))
+        logger.log(pad+'  vertex_num: {}'.format(len(self.vb)//12))
+        logger.log(pad+'  face_num: {}'.format(len(self.faces)))

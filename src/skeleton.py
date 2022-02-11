@@ -1,4 +1,5 @@
 from io_util import *
+from logger import logger
 
 class Bone:
     #name_id: id of name list
@@ -16,9 +17,8 @@ class Bone:
         return Bone(f)
 
     def read_pos(self, f):
-        self.rot=read_float32_array(f, len=4)
-        self.pos=read_vec3_f32(f)
-        self.size=read_vec3_f32(f)
+        #self.pos=read_float32_array(f, len=10)
+        self.pos=f.read(40)
 
     def write(f, bone):
         write_uint32(f, bone.name_id)
@@ -26,9 +26,11 @@ class Bone:
         write_int32(f, bone.parent)
 
     def write_pos(f, bone):
-        write_float32_array(f, bone.rot)
-        write_vec3_f32(f, bone.pos)
-        write_vec3_f32(f, bone.size)
+        #write_float32_array(f, bone.pos)
+        f.write(bone.pos)
+
+    def update(self, bone):
+        self.pos=bone.pos
 
     def name(self, name):
         self.name=name
@@ -43,7 +45,7 @@ class Bone:
                 parent_name='None'
             else:
                 parent_name=bones[parent_id].name
-            print(pad+'id: '+str(i)+', name: '+name+', parent: '+parent_name)
+            logger.log(pad+'id: '+str(i)+', name: '+name+', parent: '+parent_name)
             i+=1
 
     def name_bones(bones, name_list):
@@ -72,7 +74,7 @@ class Skeleton:
 
         #read position
         bone_num=read_uint32(f)
-        check(bone_num, len(self.bones), f, 'Parse failed! (Skeleton)')
+        check(bone_num, len(self.bones), f, 'Parse failed! (Skeleton: bone number)')
         for b in self.bones:
             b.read_pos(f)
 
@@ -89,8 +91,15 @@ class Skeleton:
     def name_bones(self, name_list):
         Bone.name_bones(self.bones, name_list)
 
+    def import_bones(self, bones):
+        for self_bone, new_bone in zip(self.bones, bones):
+            #if self_bone.name!=new_bone.name:
+            #    logger.error("")
+            #print('{} -> {}'.format(self_bone.pos[4:7], new_bone.pos[4:7]))
+            self_bone.update(new_bone)
+
     def print(self, padding=0):
         pad=' '*padding
-        print(pad+'Skeleton (offset: {})'.format(self.offset))
-        print(pad+'  bone_num: {}'.format(len(self.bones)))
+        logger.log(pad+'Skeleton (offset: {})'.format(self.offset))
+        logger.log(pad+'  bone_num: {}'.format(len(self.bones)))
         Bone.print_bones(self.bones, padding=2+padding)
