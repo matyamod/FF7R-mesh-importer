@@ -1,4 +1,4 @@
-Python scripts for importing skeletal mesh by MatyaModding
+FF7R Mesh Importer ver0.1.3 by MatyaModding
 
 Notes
 ~~~~~
@@ -12,7 +12,7 @@ Notes
 
 Supported Assets
 ~~~~~~~~~~~~~~~~
-- Cloud (standard outfit)
+- Character assets (You need to remove KDI)
 - Weapon assets without WE90**
 
 
@@ -29,6 +29,7 @@ python main.py ff7r_file [ue4_18_file] save_folder [--mode=mode] [--verbose]
     'removeKDI': Removes KDI buffers. Only works for FF7R's assets.
     'dumpBuffers': Dumps buffers LODs have. Only works for FF7R's assets.
     'valid': Checks if the script can parse or not. Only works for FF7R's assets
+    'valid_ue4_18': Checks if the script can parse or not. Only works for UE4.18's assets
 - --verbose: Shows info.
 - --only_mesh: Does not import bones
 
