@@ -92,7 +92,7 @@ def save_as_fbx(file, global_scale, mesh_smooth_type, export_tangent):
         global_scale=global_scale,
         apply_unit_scale=True,
         apply_scale_options='FBX_SCALE_NONE',
-        use_space_transform=True,
+        #use_space_transform=True,
         object_types=set(['ARMATURE','MESH']),
         use_mesh_modifiers=True,
         mesh_smooth_type=mesh_smooth_type,
