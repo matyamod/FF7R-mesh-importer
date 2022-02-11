@@ -14,9 +14,9 @@ def get_size(file):
 def check(actual, expected, f=None, msg=''):
     if actual!=expected:
         if f is not None:
-            logger.log('offset: {}'.format(f.tell()))
-        logger.log('actual: {}'.format(actual))
-        logger.log('expected: {}'.format(expected))
+            logger.log('offset: {}'.format(f.tell()), ignore_verbose=True)
+        logger.log('actual: {}'.format(actual), ignore_verbose=True)
+        logger.log('expected: {}'.format(expected), ignore_verbose=True)
         logger.error(msg)
 
 def read_uint32(file):
@@ -164,6 +164,8 @@ def write_null_array(f, len):
 def compare(file1,file2):
     f1=open(file1, 'rb')
     f2=open(file2, 'rb')
+    logger.log('Comparing {} and {}...'.format(file1, file2), ignore_verbose=True)
+
     f1_size=get_size(f1)
     f2_size=get_size(f2)
     
@@ -181,7 +183,7 @@ def compare(file1,file2):
             break
   
     if i==size-1:
-        print('Same data!')
+        logger.log('Same data!', ignore_verbose=True)
     else:
         logger.error('Not same :{}'.format(i))
 

@@ -311,11 +311,8 @@ class LOD:
             self.unknown_VB=read_int32_array(f)
 
 
-    def read(f):
-        return LOD(f, ff7r=False)
-    
-    def read_ff7r(f):
-        return LOD(f, ff7r=True)
+    def read(f, ff7r):
+        return LOD(f, ff7r=ff7r)
     
     def read_faces(f, name=''):
         uint_type=read_uint8(f)

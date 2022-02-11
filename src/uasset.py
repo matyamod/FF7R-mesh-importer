@@ -211,11 +211,15 @@ class Uasset:
         self.exports=read_array(f, UassetExport.read, len=self.header.export_num)
         UassetExport.name_exports(self.exports, self.name_list, self.file)
 
-        logger.log('Export Name List')
+        logger.log('Export')
         for export in self.exports:
             export.print()
 
-        self.bin3=f.read()
+        self.bin3=f.read(8)
+        self.id1=read_int32(f)
+        self.id2=read_int32(f)
+
+        self.bin4=f.read()
         f.close()
     
     def save(self, file):
@@ -232,3 +236,6 @@ class Uasset:
             for export in self.exports:
                 UassetExport.write(f, export)
             f.write(self.bin3)
+            write_int32(f,self.id1)
+            write_int32(f,self.id2)
+            f.write(self.bin4)
