@@ -17,10 +17,10 @@ class MeshUexp:
     #unknown2: ?
 
     UNREAL_SIGNATURE=b'\xC1\x83\x2A\x9E'
-    def __init__(self, file, ff7r=False):
-        self.load(file, ff7r=ff7r)
+    def __init__(self, file):
+        self.load(file)
 
-    def load(self, file, ff7r=False):
+    def load(self, file):
         if file[-4:]!='uexp':
             logger.error('Not .uexp!')
 
@@ -28,12 +28,12 @@ class MeshUexp:
         uasset_file=file[:-4]+'uasset'
         if not os.path.exists(uasset_file):
             logger.error('FileNotFound: You should put .uasset in the same directory as .uexp. ({})'.format(uasset_file))
-        self.ff7r=ff7r
-        logger.log('FF7R: {}'.format(self.ff7r))
         self.uasset = Uasset(uasset_file)
         self.name_list=self.uasset.name_list        
         self.exports=self.uasset.exports
         self.material_name_id_list=self.uasset.material_name_id_list
+        self.ff7r=self.uasset.ff7r
+        logger.log('FF7R: {}'.format(self.ff7r))
 
         logger.log('')
         logger.log('Loading '+file+'...', ignore_verbose=True)
@@ -127,6 +127,9 @@ class MeshUexp:
         write_array(f, self.mesh_or_something, PhysicalMesh.write, with_length=True)
 
     def remove_LODs(self):
+        if not self.ff7r:
+            logger.error("The file should be a FF7R's asset!")
+        
         num=len(self.LOD)
         if num==0:
             return
@@ -134,6 +137,9 @@ class MeshUexp:
         logger.log('LOD1~{} has been removed.'.format(num-1), ignore_verbose=True)
 
     def import_LODs(self, mesh_uexp, only_mesh=False):
+        if not self.ff7r:
+            logger.error("The file should be a FF7R's asset!")
+
         if len(self.skeleton.bones)!=len(mesh_uexp.skeleton.bones):
             logger.error('Skeletons are not the same.')
         
@@ -150,6 +156,9 @@ class MeshUexp:
             self.LOD[i].import_LOD(mesh_uexp.LOD[i], str(i))
 
     def remove_KDI(self):
+        if not self.ff7r:
+            logger.error("The file should be a FF7R's asset!")
+        
         for lod in self.LOD:
             lod.remove_KDI()
         

@@ -142,12 +142,15 @@ class UassetImport: #28 bytes
 
     def name_imports(imports, name_list):
         material_name_id_list=[]
+        ff7r=False
         for import_ in imports:
             import_.name=name_list[import_.name_id]
             import_.class_name=name_list[import_.class_id]
             if import_.class_name=='Material':
                 material_name_id_list.append(import_.name_id)
-        return material_name_id_list
+            if import_.class_name=='MaterialInstanceConstant':
+                ff7r=True
+        return material_name_id_list, ff7r
 
     def print(self, padding=2):
         pad=' '*padding
@@ -242,7 +245,7 @@ class Uasset:
         self.bin2=f.read(self.header.import_offset-offset)
 
         self.imports=read_array(f, UassetImport.read, len=self.header.import_num)
-        self.material_name_id_list=UassetImport.name_imports(self.imports, self.name_list)
+        self.material_name_id_list, self.ff7r=UassetImport.name_imports(self.imports, self.name_list)
         logger.log('Import')
         for import_ in self.imports:
             import_.print()
