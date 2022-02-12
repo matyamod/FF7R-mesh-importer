@@ -136,7 +136,7 @@ class MeshUexp:
         self.LOD=[self.LOD[0]]
         logger.log('LOD1~{} has been removed.'.format(num-1), ignore_verbose=True)
 
-    def import_LODs(self, mesh_uexp, only_mesh=False):
+    def import_LODs(self, mesh_uexp, only_mesh=False, dont_remove_KDI=False):
         if not self.ff7r:
             logger.error("The file should be a FF7R's asset!")
 
@@ -154,6 +154,9 @@ class MeshUexp:
             logger.log('LOD{}~{} has been removed.'.format(LOD_num, LOD_num_self-1), ignore_verbose=True)
         for i in range(LOD_num):
             self.LOD[i].import_LOD(mesh_uexp.LOD[i], str(i))
+
+        if not dont_remove_KDI:
+            self.remove_KDI()
 
     def remove_KDI(self):
         if not self.ff7r:
