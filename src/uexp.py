@@ -33,7 +33,7 @@ class MeshUexp:
         self.uasset = Uasset(uasset_file)
         self.name_list=self.uasset.name_list        
         self.exports=self.uasset.exports
-        self.first_material_name_id=self.uasset.first_material_name_id
+        self.material_name_id_list=self.uasset.material_name_id_list
 
         logger.log('')
         logger.log('Loading '+file+'...', ignore_verbose=True)
@@ -74,7 +74,7 @@ class MeshUexp:
                     c=0
                 if c==3:
                     name_id=read_uint32(f)
-                    if name_id==self.first_material_name_id:
+                    if name_id in self.material_name_id_list:
                         f.seek(-12,1)
                         break
 
