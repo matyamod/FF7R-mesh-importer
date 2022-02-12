@@ -33,7 +33,7 @@ class MeshUexp:
         self.uasset = Uasset(uasset_file)
         self.name_list=self.uasset.name_list        
         self.exports=self.uasset.exports
-        self.bounds_id=self.uasset.id2+256
+        self.first_material_name_id=self.uasset.first_material_name_id
 
         logger.log('')
         logger.log('Loading '+file+'...', ignore_verbose=True)
@@ -64,19 +64,20 @@ class MeshUexp:
             self.unknown=unknown.read(f)
             self.unknown.print()
         else:
-            c=0
-            print(self.bounds_id)
-            while (c<4):
+            while (True):
+                if f.tell()>10000:
+                    logger.error('Parse failed. Check the name of materials. They should contain the asset name.')
                 i=read_uint8(f)
-                if c>0 and i==255:
+                if i==255:
                     c+=1
-                elif i==self.bounds_id:
-                    c=1
                 else:
                     c=0
+                if c==3:
+                    name_id=read_uint32(f)
+                    if name_id==self.first_material_name_id:
+                        f.seek(-12,1)
+                        break
 
-            
-            f.seek(42, 1)
             x=read_uint32(f)
             f.seek(x*36, 1) #material
 
