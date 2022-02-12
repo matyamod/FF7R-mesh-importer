@@ -17,7 +17,7 @@ class MeshUexp:
     #unknown2: ?
 
     UNREAL_SIGNATURE=b'\xC1\x83\x2A\x9E'
-    def __init__(self, file):      
+    def __init__(self, file):
         self.load(file)
 
     def load(self, file):
@@ -31,6 +31,9 @@ class MeshUexp:
         self.uasset = Uasset(uasset_file)
         self.name_list=self.uasset.name_list        
         self.exports=self.uasset.exports
+        self.material_name_id_list=self.uasset.material_name_id_list
+        self.ff7r=self.uasset.ff7r
+        logger.log('FF7R: {}'.format(self.ff7r))
 
         logger.log('')
         logger.log('Loading '+file+'...', ignore_verbose=True)
@@ -53,12 +56,30 @@ class MeshUexp:
 
             #footer
             self.foot=f.read()
-            check(self.foot, MeshUexp.UNREAL_SIGNATURE, f, 'Parse failed. (foot)')
+            check(self.foot[-4:], MeshUexp.UNREAL_SIGNATURE, f, 'Parse failed. (foot)')
 
     def read_main(self, f):
-        #unknwon data
-        self.unknown=unknown.read(f)
-        self.unknown.print()
+        if self.ff7r:
+            #unknwon data
+            self.unknown=unknown.read(f)
+            self.unknown.print()
+        else:
+            while (True):
+                if f.tell()>10000:
+                    logger.error('Parse failed. Check the name of materials. They should contain the asset name.')
+                i=read_uint8(f)
+                if i==255:
+                    c+=1
+                else:
+                    c=0
+                if c==3:
+                    name_id=read_uint32(f)
+                    if name_id in self.material_name_id_list:
+                        f.seek(-12,1)
+                        break
+
+            x=read_uint32(f)
+            f.seek(x*36, 1) #material
 
         #skeleton data
         self.skeleton=Skeleton.read(f)
@@ -69,7 +90,7 @@ class MeshUexp:
         LOD_num=read_uint32(f)
         self.LOD=[]
         for i in range(LOD_num):
-            lod=LOD.read_ff7r(f)
+            lod=LOD.read(f, ff7r=self.ff7r)
             lod.print(str(i), self.skeleton.bones)
             self.LOD.append(lod)
 
@@ -106,6 +127,9 @@ class MeshUexp:
         write_array(f, self.mesh_or_something, PhysicalMesh.write, with_length=True)
 
     def remove_LODs(self):
+        if not self.ff7r:
+            logger.error("The file should be a FF7R's asset!")
+        
         num=len(self.LOD)
         if num==0:
             return
@@ -113,6 +137,9 @@ class MeshUexp:
         logger.log('LOD1~{} has been removed.'.format(num-1), ignore_verbose=True)
 
     def import_LODs(self, mesh_uexp, only_mesh=False):
+        if not self.ff7r:
+            logger.error("The file should be a FF7R's asset!")
+
         if len(self.skeleton.bones)!=len(mesh_uexp.skeleton.bones):
             logger.error('Skeletons are not the same.')
         
@@ -129,6 +156,9 @@ class MeshUexp:
             self.LOD[i].import_LOD(mesh_uexp.LOD[i], str(i))
 
     def remove_KDI(self):
+        if not self.ff7r:
+            logger.error("The file should be a FF7R's asset!")
+        
         for lod in self.LOD:
             lod.remove_KDI()
         
@@ -176,78 +206,6 @@ class MeshUexp:
         file=os.path.join(save_folder,'log.json'.format(i))
         with open(file, 'w') as f:
             json.dump(logs, f, indent=4)
-
-        
-
-
-class MeshUexp2:
-    UNREAL_SIGNATURE=b'\xC1\x83\x2A\x9E'
-    def __init__(self, file, bone_num=None):      
-        self.load(file, bone_num)
-
-    def load(self, file, bone_num):
-        if file[-4:]!='uexp':
-            logger.error('Not .uexp!')
-        if bone_num is None:
-            logger.error('')
-
-
-        #get name list from .uasset
-        uasset_file=file[:-4]+'uasset'
-        if not os.path.exists(uasset_file):
-            logger.error('FileNotFound: You should put .uasset in the same directory as .uexp. ({})'.format(uasset_file))
-        self.uasset = Uasset(uasset_file)
-        self.name_list=self.uasset.name_list
-
-        logger.log('')
-        logger.log('Loading '+file+'...', ignore_verbose=True)
-
-        #open .uexp
-        with open(file, 'rb') as f:
-            bone_num_bin=bone_num.to_bytes(4, byteorder='little')
-            target=[0]*4+[int(b) for b in bone_num_bin]
-            buf=read_uint8_array(f, len=8)
-            i=0
-            while(buf!=target):
-                if i>10000:
-                    logger.error('Parse failed. Skeletons may be not the same.')
-                i=read_uint8(f)
-                buf.append(i)
-                buf=buf[1:]
-                i+=1
-            f.seek(-4,1)
-
-            #skeleton data
-            self.skeleton=Skeleton.read(f)
-            self.skeleton.name_bones(self.name_list)
-            self.skeleton.print()
-
-            #LOD data
-            LOD_num=read_uint32(f)
-            self.LOD=[]
-            for i in range(LOD_num):
-                lod=LOD.read(f)
-                lod.print(str(i), self.skeleton.bones)
-                self.LOD.append(lod)
-
-
-            #mesh data?
-            num=read_uint32(f)
-            self.mesh_or_something=[]
-            for i in range(num):
-                mesh=PhysicalMesh.read(f)
-                self.mesh_or_something.append(mesh)
-                mesh.print()
-
-            #unknwon data
-            offset=f.tell()
-            foot=f.read()
-            self.unknown2=foot[:-4]
-            logger.log('Unknown block (offset: {})'.format(offset))
-            logger.log(' size: {}'.format(len(self.unknown2)))
-
-            #footer
-            check(foot[-4:], MeshUexp.UNREAL_SIGNATURE, f, 'Parse failed. (foot)')
 
 
 

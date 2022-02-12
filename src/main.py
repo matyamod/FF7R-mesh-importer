@@ -1,6 +1,6 @@
 import os, argparse
 from io_util import *
-from uexp import MeshUexp, MeshUexp2
+from uexp import MeshUexp
 from logger import logger
 
 def get_args():
@@ -14,14 +14,12 @@ def get_args():
     args = parser.parse_args()
     return args
 
-def import_mesh(ff7r_file, ue4_18_file, save_folder, bone_num=None, only_mesh=False):
+def import_mesh(ff7r_file, ue4_18_file, save_folder, only_mesh=False):
     mkdir(save_folder)
     file=os.path.basename(ff7r_file)
 
     trg_mesh=MeshUexp(ff7r_file)
-    if bone_num is None:
-        bone_num=len(trg_mesh.skeleton.bones)
-    src_mesh=MeshUexp2(ue4_18_file, bone_num=bone_num)
+    src_mesh=MeshUexp(ue4_18_file)
     trg_mesh.import_LODs(src_mesh, only_mesh=only_mesh)
 
     new_file=os.path.join(save_folder, file)
@@ -42,10 +40,11 @@ def valid(ff7r_file, save_folder):
     file=os.path.basename(ff7r_file)
     new_file=os.path.join(save_folder, file)
     mesh=MeshUexp(ff7r_file)
-    mesh.save(new_file)
-    compare(ff7r_file, new_file)
-    compare(ff7r_file[:-4]+'uasset', new_file[:-4]+'uasset')
-    logger.log('Done!')
+    if mesh.ff7r:
+        mesh.save(new_file)
+        compare(ff7r_file, new_file)
+        compare(ff7r_file[:-4]+'uasset', new_file[:-4]+'uasset')
+    logger.log('Valid!')
 
 def remove_KDI(ff7r_file, save_folder):
     mkdir(save_folder)

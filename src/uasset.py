@@ -122,6 +122,41 @@ class UassetHeader:
         logger.log('  padding offset: {}'.format(self.padding_offset))
         logger.log('  file data offset: {}'.format(self.file_data_offset))
 
+class UassetImport: #28 bytes
+    def __init__(self, f):
+        self.bin1=f.read(8)
+        self.class_id=read_uint32(f)
+        self.bin2=f.read(8)
+        self.name_id=read_uint32(f)
+        self.bin3=f.read(4)
+
+    def read(f):
+        return UassetImport(f)
+    
+    def write(f, import_):
+        f.write(import_.bin1)
+        write_uint32(f, import_.class_id)
+        f.write(import_.bin2)
+        write_uint32(f, import_.name_id)
+        f.write(import_.bin3)
+
+    def name_imports(imports, name_list):
+        material_name_id_list=[]
+        ff7r=False
+        for import_ in imports:
+            import_.name=name_list[import_.name_id]
+            import_.class_name=name_list[import_.class_id]
+            if import_.class_name=='Material':
+                material_name_id_list.append(import_.name_id)
+            if import_.class_name=='MaterialInstanceConstant':
+                ff7r=True
+        return material_name_id_list, ff7r
+
+    def print(self, padding=2):
+        pad=' '*padding
+        logger.log(pad+self.name)
+        logger.log(pad+'  class: '+self.class_name)
+
 class UassetExport: #104 bytes
     KNOWN_EXPORTS=['EndEmissiveColorUserData', 'SQEX_BonamikAssetUserData', 'SQEX_KineDriver_AssetUserData', 'SkelMeshBoneAttributeRedirectorUserData']
     IGNORE=[True, True, True, True]
@@ -207,15 +242,24 @@ class Uasset:
             self.name_list.append(name)
             self.flag_list.append(flag)
         offset=f.tell()
-        self.bin2=f.read(self.header.export_offset-offset)
+        self.bin2=f.read(self.header.import_offset-offset)
+
+        self.imports=read_array(f, UassetImport.read, len=self.header.import_num)
+        self.material_name_id_list, self.ff7r=UassetImport.name_imports(self.imports, self.name_list)
+        logger.log('Import')
+        for import_ in self.imports:
+            import_.print()
+
+        offset=f.tell()
+        self.bin3=f.read(self.header.export_offset-offset)
         self.exports=read_array(f, UassetExport.read, len=self.header.export_num)
         UassetExport.name_exports(self.exports, self.name_list, self.file)
 
-        logger.log('Export Name List')
+        logger.log('Export')
         for export in self.exports:
             export.print()
 
-        self.bin3=f.read()
+        self.bin4=f.read()
         f.close()
     
     def save(self, file):
@@ -228,7 +272,7 @@ class Uasset:
                 f.write(flag)
 
             f.write(self.bin2)
-            
-            for export in self.exports:
-                UassetExport.write(f, export)
+            write_array(f, self.imports, UassetImport.write)                
             f.write(self.bin3)
+            write_array(f, self.exports, UassetExport.write)
+            f.write(self.bin4)

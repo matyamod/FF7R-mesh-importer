@@ -1,4 +1,4 @@
-Python scripts for importing skeletal mesh by MatyaModding
+FF7R Mesh Importer ver0.1.3 by MatyaModding
 
 Notes
 ~~~~~
@@ -12,7 +12,7 @@ Notes
 
 Supported Assets
 ~~~~~~~~~~~~~~~~
-- Cloud (standard outfit)
+- Character assets (You need to remove KDI)
 - Weapon assets without WE90**
 
 

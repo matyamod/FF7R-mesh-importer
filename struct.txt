@@ -186,9 +186,9 @@ struct unknown{
     uint32 array
     uint32: 0
     uint16 : 1
-    float32*7
+    float32*7 #BoxSphereBounds?
     uint32:array size
-    array {
+    array { #FSkeletalMaterial?
         int32: ?
         uint32: ?
         uint32*3:0,1,0
