@@ -11,16 +11,17 @@ def get_args():
     parser.add_argument('--mode', default='import', type=str, help="'import', 'removeLOD', 'valid', 'removeKDI', or 'dumpBuffers'")
     parser.add_argument('--verbose', action='store_true')
     parser.add_argument('--only_mesh', action='store_true')
+    parser.add_argument('--dont_remove_KDI', action='store_true')
     args = parser.parse_args()
     return args
 
-def import_mesh(ff7r_file, ue4_18_file, save_folder, only_mesh=False):
+def import_mesh(ff7r_file, ue4_18_file, save_folder, only_mesh=False, dont_remove_KDI=False):
     mkdir(save_folder)
     file=os.path.basename(ff7r_file)
 
     trg_mesh=MeshUexp(ff7r_file)
     src_mesh=MeshUexp(ue4_18_file)
-    trg_mesh.import_LODs(src_mesh, only_mesh=only_mesh)
+    trg_mesh.import_LODs(src_mesh, only_mesh=only_mesh, dont_remove_KDI=dont_remove_KDI)
 
     new_file=os.path.join(save_folder, file)
     trg_mesh.save(new_file)
@@ -71,11 +72,12 @@ if __name__=='__main__':
     mode=args.mode
     verbose=args.verbose
     only_mesh=args.only_mesh
+    dont_remove_KDI=args.dont_remove_KDI
     logger.set_verbose(verbose)
 
     logger.log('mode: '+mode)
     if mode=='import':
-        import_mesh(ff7r_file, ue4_18_file, save_folder, only_mesh=only_mesh)
+        import_mesh(ff7r_file, ue4_18_file, save_folder, only_mesh=only_mesh, dont_remove_KDI=dont_remove_KDI)
     elif mode=='removeLOD':
         remove_LOD(ff7r_file, save_folder)
     elif mode=='valid':

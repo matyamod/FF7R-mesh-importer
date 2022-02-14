@@ -66,7 +66,7 @@ class MeshUexp:
         else:
             while (True):
                 if f.tell()>10000:
-                    logger.error('Parse failed. Check the name of materials. They should contain the asset name.')
+                    logger.error('Parse failed. Material properties not found. This is an unexpected error.')
                 i=read_uint8(f)
                 if i==255:
                     c+=1
@@ -128,17 +128,18 @@ class MeshUexp:
 
     def remove_LODs(self):
         if not self.ff7r:
-            logger.error("The file should be a FF7R's asset!")
+            logger.error("The file should be an FF7R's asset!")
         
         num=len(self.LOD)
-        if num==0:
+        if num<=1:
+            logger.log('Nothing has been removed.'.format(num-1), ignore_verbose=True)
             return
         self.LOD=[self.LOD[0]]
-        logger.log('LOD1~{} has been removed.'.format(num-1), ignore_verbose=True)
+        logger.log('LOD1~{} have been removed.'.format(num-1), ignore_verbose=True)
 
-    def import_LODs(self, mesh_uexp, only_mesh=False):
+    def import_LODs(self, mesh_uexp, only_mesh=False, dont_remove_KDI=False):
         if not self.ff7r:
-            logger.error("The file should be a FF7R's asset!")
+            logger.error("The file should be an FF7R's asset!")
 
         if len(self.skeleton.bones)!=len(mesh_uexp.skeleton.bones):
             logger.error('Skeletons are not the same.')
@@ -151,16 +152,21 @@ class MeshUexp:
         LOD_num=min(LOD_num_self, len(mesh_uexp.LOD))
         if LOD_num<LOD_num_self:
             self.LOD=self.LOD[:LOD_num]
-            logger.log('LOD{}~{} has been removed.'.format(LOD_num, LOD_num_self-1), ignore_verbose=True)
+            logger.log('LOD{}~{} have been removed.'.format(LOD_num, LOD_num_self-1), ignore_verbose=True)
         for i in range(LOD_num):
             self.LOD[i].import_LOD(mesh_uexp.LOD[i], str(i))
 
+        if not dont_remove_KDI:
+            self.remove_KDI()
+
     def remove_KDI(self):
         if not self.ff7r:
-            logger.error("The file should be a FF7R's asset!")
+            logger.error("The file should be an FF7R's asset!")
         
         for lod in self.LOD:
             lod.remove_KDI()
+
+        logger.log("KDI buffers have been removed.")
         
     def dump_buffers(self, save_folder):
         logs={}
@@ -188,19 +194,19 @@ class MeshUexp:
 
             log={'IB': ib1, 'VB0': vb1, 'VB2': vb2, 'IB2': ib2}
 
-            if lod.unk2_buffer_size>0:
-                file=os.path.join(save_folder,'LOD{}_unk_buffer.buf'.format(i))
+            if lod.KDI_buffer_size>0:
+                file=os.path.join(save_folder,'LOD{}_KDI_buffer.buf'.format(i))
                 with open(file, 'wb') as f:
-                    stride, size, offset = lod.dump_unk_buffer(f)
-                unk_buffer={'offset': offset, 'stride': stride, 'size': size}
+                    stride, size, offset = lod.dump_KDI_buffer(f)
+                KDI_buffer={'offset': offset, 'stride': stride, 'size': size}
 
-                file=os.path.join(save_folder,'LOD{}_unk_VB.buf'.format(i))
+                file=os.path.join(save_folder,'LOD{}_KDI_VB.buf'.format(i))
                 with open(file, 'wb') as f:
-                    stride, size, offset = lod.dump_unk_VB(f)
-                unk_VB={'offset': offset, 'stride': stride, 'size': size}
+                    stride, size, offset = lod.dump_KDI_VB(f)
+                KDI_VB={'offset': offset, 'stride': stride, 'size': size}
 
-                log['unk_buffer']=unk_buffer
-                log['unk_VB']=unk_VB
+                log['KDI_buffer']=KDI_buffer
+                log['KDI_VB']=KDI_VB
             logs['LOD{}'.format(i)]=log
         
         file=os.path.join(save_folder,'log.json'.format(i))

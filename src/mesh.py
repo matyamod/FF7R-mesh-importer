@@ -242,10 +242,10 @@ class LOD:
         else:
             self.sections=read_array(f, LODSection.read)
 
-        self.unk2_buffer_size=0
+        self.KDI_buffer_size=0
         for section in self.sections:
             if section.unk2 is not None:
-                self.unk2_buffer_size+=len(section.unk2)//16
+                self.KDI_buffer_size+=len(section.unk2)//16
         
         self.face_block_offset=f.tell()
         self.face_uint_type, self.faces, self.face_IB_offset = LOD.read_faces(f, 'faces')
@@ -294,21 +294,21 @@ class LOD:
         self.face2_uint_type, self.faces2, self.face2_IB_offset =LOD.read_faces(f, 'faces2')
         check(len(self.faces2)/len(self.faces), 4)
 
-        if self.unk2_buffer_size>0:
+        if self.KDI_buffer_size>0:
             one=read_uint16(f)
             check(one, 1, f)
             read_const_uint32(f, 16, f)
             size = read_uint32(f)
-            self.unk2_buffer_offset=f.tell()
-            #self.unk2_buffer=read_array(f, read_16byte, len=size)
-            self.unk2_buffer=f.read(size*16)
-            check(len(self.unk2_buffer)//16, self.unk2_buffer_size, f)
+            self.KDI_buffer_offset=f.tell()
+            #self.KDI_buffer=read_array(f, read_16byte, len=size)
+            self.KDI_buffer=f.read(size*16)
+            check(len(self.KDI_buffer)//16, self.KDI_buffer_size, f)
 
             one=read_uint16(f)
             check(one, 1, f)
             read_const_uint32(f, 4, f)
-            self.unknown_VB_offset=f.tell()
-            self.unknown_VB=read_int32_array(f)
+            self.KDI_VB_offset=f.tell()
+            self.KDI_VB=read_int32_array(f)
 
 
     def read(f, ff7r):
@@ -391,15 +391,15 @@ class LOD:
         write_uint16(f, lod.uv_num)
         lod.write_vertices(f)
         LOD.write_faces(f, lod.face2_uint_type, lod.faces2)
-        if lod.unk2_buffer_size>0:
+        if lod.KDI_buffer_size>0:
             write_uint16(f, 1)
             write_uint32(f, 16)
-            write_uint32(f, len(lod.unk2_buffer)//16)
-            f.write(lod.unk2_buffer)
-            #write_array(f, lod.unk2_buffer, write_16byte)
+            write_uint32(f, len(lod.KDI_buffer)//16)
+            f.write(lod.KDI_buffer)
+            #write_array(f, lod.KDI_buffer, write_16byte)
             write_uint16(f, 1)
             write_uint32(f, 4)
-            write_int32_array(f, lod.unknown_VB, with_length=True)
+            write_int32_array(f, lod.KDI_VB, with_length=True)
 
     def write_faces(f, uint_type, faces):
         write_uint8(f, uint_type)
@@ -428,7 +428,7 @@ class LOD:
             stride=2
         else:
             stride=4
-        return stride, len(self.faces)*3, self.face_IB_offset
+        return stride, len(self.faces)//stride, self.face_IB_offset
 
     def dump_VB1(self, f):
         Vertex.write_array(f, self.vertices, self.use_float32UV)
@@ -446,16 +446,16 @@ class LOD:
             stride=2
         else:
             stride=4
-        return stride, len(self.faces2)*3, self.face2_IB_offset
+        return stride, len(self.faces2)//stride, self.face2_IB_offset
     
-    def dump_unk_buffer(self, f):
-        f.write(self.unk2_buffer)
-        #write_array(f, self.unk2_buffer, write_16byte)
-        return 16, len(self.unk2_buffer)//16, self.unk2_buffer_offset
+    def dump_KDI_buffer(self, f):
+        f.write(self.KDI_buffer)
+        #write_array(f, self.KDI_buffer, write_16byte)
+        return 16, len(self.KDI_buffer)//16, self.KDI_buffer_offset
     
-    def dump_unk_VB(self, f):
-        write_int32_array(f, self.unknown_VB)
-        return 4, len(self.unknown_VB), self.unknown_VB_offset
+    def dump_KDI_VB(self, f):
+        write_int32_array(f, self.KDI_VB)
+        return 4, len(self.KDI_VB), self.KDI_VB_offset
 
     def import_LOD(self, lod, name=''):
         if len(self.sections)<len(lod.sections):
@@ -481,11 +481,11 @@ class LOD:
         self.uv_num=lod.uv_num
         self.scale=lod.scale
         self.strip_flags=lod.strip_flags
-        if self.unk2_buffer_size>0:
-            if len(self.vertices)>=len(self.unknown_VB):
-                self.unknown_VB=self.unknown_VB[:len(self.vertices)]
+        if self.KDI_buffer_size>0:
+            if len(self.vertices)>=len(self.KDI_VB):
+                self.KDI_VB=self.KDI_VB[:len(self.vertices)]
             else:
-                self.unknown_VB=self.unknown_VB+[-1]*(len(self.vertices)-len(self.unknown_VB))
+                self.KDI_VB=self.KDI_VB+[-1]*(len(self.vertices)-len(self.KDI_VB))
 
         logger.log('LOD{} has been imported.'.format(name))
         logger.log('  faces: {} -> {}'.format(f_num1, f_num2))
@@ -507,14 +507,17 @@ class LOD:
         if self.unknown_vertex_data is not None:
             logger.log(pad+'  unknown buffer (offset: {})'.format(self.unknown_offset))
         logger.log(pad+'IB2 (offset: {})'.format(self.face_block2_offset))
-        if self.unk2_buffer_size>0:
-            logger.log(pad+'unk_buffer (KDI buffer): size: {}*16'.format(self.unk2_buffer_size))
-            logger.log(pad+'unknown_VB (KDI VB): stride: 4')
+        if self.KDI_buffer_size>0:
+            logger.log(pad+'KDI buffer (offset: {})'.format(self.KDI_buffer_offset))
+            logger.log(pad+'  stride: 16')
+            logger.log(pad+'  size: {}'.format(self.KDI_buffer_size))
+            logger.log(pad+'KDI VB (offset: {})'.format(self.KDI_VB_offset))
+            logger.log(pad+'  stride: 4')
 
     def remove_KDI(self):
-        self.unk2_buffer_size=0
-        self.unk2_buffer=None
-        self.unknown_VB=None
+        self.KDI_buffer_size=0
+        self.KDI_buffer=None
+        self.KDI_VB=None
         for section in self.sections:
             section.remove_KDI()
 
