@@ -1,8 +1,19 @@
+# python
 *__pycache__
-*test*
 *valid
 *buffers
 *KDIremoved
 *LODremoved
 *log.txt
 *.sh
+
+# uasset
+*.uexp
+*.uasset
+
+# visual studio
+*.vs
+
+# etc
+*test*
+*.exe
