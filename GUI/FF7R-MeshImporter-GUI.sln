@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32126.317
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FF7R-MeshImporter-GUI", "FF7R-MeshImporter-GUI\FF7R-MeshImporter-GUI.csproj", "{31E9DB3D-2BA5-428B-A38B-14A2061FA321}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{31E9DB3D-2BA5-428B-A38B-14A2061FA321}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{31E9DB3D-2BA5-428B-A38B-14A2061FA321}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{31E9DB3D-2BA5-428B-A38B-14A2061FA321}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{31E9DB3D-2BA5-428B-A38B-14A2061FA321}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {115EC2E7-C6C6-4423-A4D3-6F19B663D94C}
+	EndGlobalSection
+EndGlobal
