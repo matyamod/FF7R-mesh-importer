@@ -1,0 +1,188 @@
+name: build
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+  
+env:
+  ZIP_NAME: FF7R-MeshImporter
+  MAIN_PYTHON_FILE: main
+  GUI_NAME: FF7R-MeshImporter-GUI
+
+jobs:
+  build:
+    runs-on: windows-2022
+    steps:
+    
+      - name: Check tag
+        run: |
+          if [[ ${{ github.ref }} == refs/tags/v* ]]; then
+            VERSION=-$(echo ${{ github.ref }} | sed -e "s#refs/tags/##g")
+          else
+            VERSION=""
+          fi
+          echo "REPO_VERSION=$VERSION" >> $GITHUB_ENV
+        shell: bash
+        
+      - uses: actions/checkout@v2
+      
+      - name: Copy files
+        run: |
+          mkdir -p ../release/exe
+          cp ./changelog.txt ../release/exe
+          cp ./LICENSE ../release/exe
+          cp ./README.md ../release/exe
+          mkdir -p ../release/exe/BlenderExportScript
+          cp ./LOD_exporter_for_skeletal_mesh.py ../release/exe/BlenderExportScript
+          
+          cp -r ../release/exe ../release/python
+          
+          cp ./bat-exe/*.bat ../release/exe
+          cp -r ./src ../release/python
+          cp -r ./bat-python ../release/python
+          mv ../release/python/bat-python ../release/python/bat
+          
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+          architecture: 'x64'
+          
+      - name: Cache Pip
+        id: pip_cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.pythonLocation }}
+          key: windows-pyinstall-${{ hashFiles('**/README.md') }}
+          restore-keys: windows-pyinstall-
+
+
+      - name: Install python libs
+        if: steps.pip_cache.outputs.cache-hit != 'true'
+        run: | 
+          python -V
+          pip install wheel
+         
+      - name: Set up MinGW
+        if: steps.pip_cache.outputs.cache-hit != 'true'
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: x64
+
+      - name: Clone pyinstaller repository
+        if: steps.pip_cache.outputs.cache-hit != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd $HOME
+          git clone https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/pyinstaller/pyinstaller.git
+        shell: bash
+
+      - name: Build pyinstaller
+        if: steps.pip_cache.outputs.cache-hit != 'true'
+        run: |
+          cd $HOME/pyinstaller/bootloader
+          python ./waf all
+        shell: bash
+          
+      - name: Install pyinstaller
+        if: steps.pip_cache.outputs.cache-hit != 'true'
+        run: |
+          cd $HOME/pyinstaller
+          python setup.py install
+        shell: bash
+
+      - name: Build Python
+        run: |
+          pyinstaller src/${{ env.MAIN_PYTHON_FILE }}.py --onefile
+          
+      - name: Copy files
+        run: |
+          mkdir -p ../release/exe/src
+          cp ./dist/${{ env.MAIN_PYTHON_FILE }}.exe ../release/exe/src
+          rm -rf __pycache__ build dist main.spec
+        shell: bash
+        
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Setup nuget
+        uses: nuget/setup-nuget@v1
+        with:
+          nuget-api-key: ${{ secrets.NuGetAPIKey }}
+          nuget-version: 'latest'
+
+      - name: Restore nuget
+        run: nuget restore ./GUI/${{ env.GUI_NAME }}/${{ env.GUI_NAME }}.csproj
+
+      - name: Setup msbuild
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Build GUI app
+        run: dotnet publish ./GUI/${{ env.GUI_NAME }}/${{ env.GUI_NAME }}.csproj -c Release -r win-x64 -p:PublishSingleFile=true --self-contained false -o ./
+        timeout-minutes: 5
+
+      - name: Copy GUI app
+        run: |
+          mkdir -p ../release/exe
+          cp ./${{ env.GUI_NAME }}.exe ../release/exe
+          mkdir -p ../release/python
+          cp ./${{ env.GUI_NAME }}.exe ../release/python
+        shell: bash
+
+      - name: Archive Release for python
+        uses: thedoctor0/zip-release@master
+        with:
+          directory: '../release/python'
+          type: 'zip'
+          filename: '${{ env.ZIP_NAME }}-python.zip'
+          exclusions: '*.git* .gitignore'
+          
+      - name: Archive Release for exe
+        uses: thedoctor0/zip-release@master
+        with:
+          directory: '../release/exe'
+          type: 'zip'
+          filename: '${{ env.ZIP_NAME }}-exe.zip'
+          exclusions: '*.git* .gitignore'
+      
+      - name: Create Release Draft
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          body: |
+            Changelog
+            - First Change
+            - Second Change
+          draft: true
+          prerelease: false
+
+      - name: Upload Release Asset
+        id: upload-release-asset-python
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ../release/python/${{ env.ZIP_NAME }}-python.zip
+          asset_name: ${{ env.ZIP_NAME }}-python${{ env.REPO_VERSION }}.zip
+          asset_content_type: application/zip
+          
+      - name: Upload Release Asset
+        id: upload-release-asset-exe
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ../release/exe/${{ env.ZIP_NAME }}-exe.zip
+          asset_name: ${{ env.ZIP_NAME }}-exe${{ env.REPO_VERSION }}.zip
+          asset_content_type: application/zip
