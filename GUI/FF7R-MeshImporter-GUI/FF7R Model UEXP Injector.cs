@@ -388,8 +388,8 @@ namespace FF7R_MeshImporter_GUI
                 }
             }
             
-        string strCmdText = "/c python ../src/main.py "
-            + strFFInput + " " + strUEInput + " " + strOutput + " --mode=" + mode + " "
+        string strCmdText = "/c python ./src/main.py "
+            + "\"" + strFFInput + "\"" + " " + "\"" + strUEInput + "\"" + " " + "\"" + strOutput + "\"" + " --mode=" + mode + " "
             + only_mesh + " " + dont_remove_KDI + " --verbose";
             System.Diagnostics.Process.Start("CMD.exe", strCmdText);
         }
