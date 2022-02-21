@@ -5,10 +5,13 @@
 *KDIremoved
 *LODremoved
 *log.txt
+!changelog.txt
 *.sh
 *.buf
 *.json
-
+build
+dist
+*.spec
 
 # uasset
 *.uexp
