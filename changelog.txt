@@ -1,3 +1,8 @@
+ver 0.1.4
+- add GUI
+- import mode will remove KDI buffers
+- set 0.01 to global_scale in the Blender script
+
 ver 0.1.3
 - optimize some functions
 - add support for importing the stride of VB2
