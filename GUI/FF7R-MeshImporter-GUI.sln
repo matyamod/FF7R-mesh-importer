@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.32126.317
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FF7R-MeshImporter-GUI", "FF7R-MeshImporter-GUI\FF7R-MeshImporter-GUI.csproj", "{31E9DB3D-2BA5-428B-A38B-14A2061FA321}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FF7R-MeshImporter-GUI", "FF7R-MeshImporter-GUI\FF7R-MeshImporter-GUI.csproj", "{31E9DB3D-2BA5-428B-A38B-14A2061FA321}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
