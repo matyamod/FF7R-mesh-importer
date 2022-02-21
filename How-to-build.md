@@ -1,6 +1,6 @@
 # How to Build with Github Actions
 You can build our tool with Github Actions.<br>
-It will automatically take care of everything from setting up the environment to packaging the files.<br>
+It will do everything from setting up the environment to packaging the files.<br>
 But please note that the available time for Github Actions is 2000 minutes per month for free account.<br>
 
 ### 1. Fork FF7R-mesh-importer
