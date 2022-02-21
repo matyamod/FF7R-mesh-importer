@@ -387,10 +387,24 @@ namespace FF7R_MeshImporter_GUI
                     mode = "dumpBuffers";
                 }
             }
-            
-        string strCmdText = "/c python ./src/main.py "
+
+            //check if main.exe exists
+            string strApp = "./src/main.exe";
+
+            if (!File.Exists(strApp))
+            {
+                strApp = "python ./src/main.py";
+            }
+            else
+            {
+                strApp = "call \"" + strApp + "\"";
+            }
+
+            string strCmdText = "/c " + strApp + " "
             + "\"" + strFFInput + "\"" + " " + "\"" + strUEInput + "\"" + " " + "\"" + strOutput + "\"" + " --mode=" + mode + " "
             + only_mesh + " " + dont_remove_KDI + " --verbose";
+
+            Console.WriteLine(strCmdText);
             System.Diagnostics.Process.Start("CMD.exe", strCmdText);
         }
 
