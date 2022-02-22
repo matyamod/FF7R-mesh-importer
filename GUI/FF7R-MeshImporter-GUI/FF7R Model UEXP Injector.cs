@@ -373,7 +373,10 @@ namespace FF7R_MeshImporter_GUI
                         dont_remove_KDI = "--dont_remove_KDI";
                     }
                 }
-
+                string strCmdText = "/c python ./src/main.py "
+    + "\"" + strFFInput + "\"" + " " + "\"" + strUEInput + "\"" + " " + "\"" + strOutput + "\"" + " --mode=" + mode + " "
+    + only_mesh + " " + dont_remove_KDI + " --verbose";
+                System.Diagnostics.Process.Start("CMD.exe", strCmdText);
             }
             else if (radioButton2.Checked) //UE4.18
             {
@@ -386,12 +389,14 @@ namespace FF7R_MeshImporter_GUI
                 {
                     mode = "dumpBuffers";
                 }
+
+                string strCmdText = "/c python ./src/main.py "
+    + "\"" + strUEInput + "\"" + " " + "\"" + strOutput + "\"" + " --mode=" + mode + " "
+    + only_mesh + " " + dont_remove_KDI + " --verbose";
+                System.Diagnostics.Process.Start("CMD.exe", strCmdText);
+
             }
             
-        string strCmdText = "/c python ./src/main.py "
-            + "\"" + strFFInput + "\"" + " " + "\"" + strUEInput + "\"" + " " + "\"" + strOutput + "\"" + " --mode=" + mode + " "
-            + only_mesh + " " + dont_remove_KDI + " --verbose";
-            System.Diagnostics.Process.Start("CMD.exe", strCmdText);
         }
 
 
