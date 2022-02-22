@@ -34,8 +34,7 @@ jobs:
           cp ./changelog.txt ../release/exe
           cp ./LICENSE ../release/exe
           cp ./README.md ../release/exe
-          mkdir -p ../release/exe/BlenderExportScript
-          cp ./LOD_exporter_for_skeletal_mesh.py ../release/exe/BlenderExportScript
+          cp -r ./BlenderExportScript ../release/exe/
           
           cp -r ../release/exe ../release/python
           
