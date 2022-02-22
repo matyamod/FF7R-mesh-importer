@@ -14,7 +14,7 @@
     <Authors>matyalatte, Narknon</Authors>
     <Description>FF7R Model UEXP Injector</Description>
     <Copyright>(c) 2022</Copyright>
-	<DeployExtension Condition="'$(GITHUB_ACTIONS)' != ''">False</DeployExtension>
+    <DeployExtension Condition="'$(GITHUB_ACTIONS)' != ''">False</DeployExtension>
   </PropertyGroup>
 
   <ItemGroup>
