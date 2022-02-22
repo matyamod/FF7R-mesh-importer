@@ -26,8 +26,8 @@ import os
 #   3.2. Import LODs into the skeletal mesh of *_LOD0.fbx
 
 #parameters
-global_scale=1 #Transform->Scale
-mesh_smooth_type='OFF' #Geometry->Smoothing, 'OFF' or 'FACE' or 'EDGE'
+global_scale=0.01 #Transform->Scale
+mesh_smooth_type='FACE' #Geometry->Smoothing, 'OFF' or 'FACE' or 'EDGE'
 export_tangent=False #Geometry->Tnagent Space
 
 
