@@ -343,6 +343,18 @@ namespace FF7R_MeshImporter_GUI
             string only_mesh = "";
             string dont_remove_KDI = "";
 
+            //check if main.exe exists
+            string strApp = "./src/main.exe";
+
+            if (!File.Exists(strApp))
+            {
+                strApp = "python ./src/main.py";
+            }
+            else
+            {
+                strApp = "call \"" + strApp + "\"";
+            }
+
             if (radioButton1.Checked) //FF7R Injection
             {
                 //set mode
@@ -373,7 +385,7 @@ namespace FF7R_MeshImporter_GUI
                         dont_remove_KDI = "--dont_remove_KDI";
                     }
                 }
-                string strCmdText = "/c python ./src/main.py "
+                string strCmdText = "/c " + strApp + " "
     + "\"" + strFFInput + "\"" + " " + "\"" + strUEInput + "\"" + " " + "\"" + strOutput + "\"" + " --mode=" + mode + " "
     + only_mesh + " " + dont_remove_KDI + " --verbose";
                 System.Diagnostics.Process.Start("CMD.exe", strCmdText);
@@ -390,7 +402,7 @@ namespace FF7R_MeshImporter_GUI
                     mode = "dumpBuffers";
                 }
 
-                string strCmdText = "/c python ./src/main.py "
+                string strCmdText = "/c " + strApp + " "
     + "\"" + strUEInput + "\"" + " " + "\"" + strOutput + "\"" + " --mode=" + mode + " "
     + only_mesh + " " + dont_remove_KDI + " --verbose";
                 System.Diagnostics.Process.Start("CMD.exe", strCmdText);
