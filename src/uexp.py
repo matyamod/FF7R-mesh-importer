@@ -5,6 +5,7 @@ import os, json
 from io_util import *
 from mesh import LOD, PhysicalMesh
 from skeleton import Skeleton
+from material import Material
 from unknown_block import unknown
 from uasset import Uasset
 from logger import logger
@@ -22,7 +23,7 @@ class MeshUexp:
 
     def load(self, file):
         if file[-4:]!='uexp':
-            logger.error('Not .uexp!')
+            logger.error('Not .uexp! ({})'.format(file))
 
         #get name list and export data from .uasset
         uasset_file=file[:-4]+'uasset'
@@ -30,9 +31,12 @@ class MeshUexp:
             logger.error('FileNotFound: You should put .uasset in the same directory as .uexp. ({})'.format(uasset_file))
         self.uasset = Uasset(uasset_file)
         self.name_list=self.uasset.name_list        
-        self.exports=self.uasset.exports
-        self.material_name_id_list=self.uasset.material_name_id_list
-        self.ff7r=self.uasset.ff7r
+        self.exports = self.uasset.exports
+        self.imports = self.uasset.imports
+        self.ff7r = self.uasset.ff7r
+        self.skeletal = self.uasset.skeletal
+        if not self.skeletal:
+            logger.error('Not skeletal mesh. ({})'.format(file))
         logger.log('FF7R: {}'.format(self.ff7r))
 
         logger.log('')
@@ -59,27 +63,35 @@ class MeshUexp:
             check(self.foot[-4:], MeshUexp.UNREAL_SIGNATURE, f, 'Parse failed. (foot)')
 
     def read_main(self, f):
-        if self.ff7r:
-            #unknwon data
-            self.unknown=unknown.read(f)
-            self.unknown.print()
-        else:
-            while (True):
-                if f.tell()>10000:
-                    logger.error('Parse failed. Material properties not found. This is an unexpected error.')
-                i=read_uint8(f)
-                if i==255:
-                    c+=1
-                else:
-                    c=0
-                if c==3:
-                    name_id=read_uint32(f)
-                    if name_id in self.material_name_id_list:
-                        f.seek(-12,1)
-                        break
+        offset=f.tell()
+        #if self.ff7r:
+        #    #unknwon data
+        #    self.unknown=unknown.read(f)
+        #    self.unknown.print()
+        #else:
+        while (True):
+            if f.tell()>10000:
+                logger.error('Parse failed. Material properties not found. This is an unexpected error.')
+            i=read_uint8(f)
+            if i==255:
+                c+=1
+            else:
+                c=0
+            if c==3:
+                f.seek(-4,1)
+                import_id=-read_int32(f)-1
+                if import_id>=len(self.imports):
+                    f.seek(4,1)
+                    continue
+                if self.imports[import_id].material:
+                    f.seek(-8,1)
+                    break
+        unk_size=f.tell()-offset
+        f.seek(offset)
+        self.unk=f.read(unk_size)
 
-            x=read_uint32(f)
-            f.seek(x*36, 1) #material
+        self.materials=read_array(f, Material.read)
+        Material.print_materials(self.materials, self.name_list, self.imports)
 
         #skeleton data
         self.skeleton=Skeleton.read(f)
@@ -121,7 +133,9 @@ class MeshUexp:
         self.uasset.save(file[:-4]+'uasset')
 
     def save_main(self, f):
-        unknown.write(f, self.unknown)
+        #unknown.write(f, self.unknown)
+        f.write(self.unk)
+        write_array(f, self.materials, Material.write, with_length=True)
         Skeleton.write(f, self.skeleton)
         write_array(f, self.LOD, LOD.write, with_length=True)
         write_array(f, self.mesh_or_something, PhysicalMesh.write, with_length=True)
@@ -172,54 +186,27 @@ class MeshUexp:
         logs={}
         for lod,i in zip(self.LOD, range(len(self.LOD))):
 
-            file=os.path.join(save_folder,'LOD{}_IB.buf'.format(i))
-            with open(file, 'wb') as f:
-                stride, size, offset = lod.dump_IB1(f)
-            ib1={'offset': offset, 'stride': stride, 'size': size}
-            
-            file=os.path.join(save_folder,'LOD{}_VB0.buf'.format(i))
-            with open(file, 'wb') as f:
-                stride, size, offset = lod.dump_VB1(f)
-            vb1={'offset': offset, 'stride': stride, 'size': size}
-
-            file=os.path.join(save_folder,'LOD{}_VB2.buf'.format(i))
-            with open(file, 'wb') as f:
-                stride, size, offset = lod.dump_VB2(f)
-            vb2={'offset': offset, 'stride': stride, 'size': size}
-            
-            file=os.path.join(save_folder,'LOD{}_IB2.buf'.format(i))
-            with open(file, 'wb') as f:
-                stride, size, offset = lod.dump_IB2(f)
-            ib2={'offset': offset, 'stride': stride, 'size': size}
-
-            log={'IB': ib1, 'VB0': vb1, 'VB2': vb2, 'IB2': ib2}
-
+            buffers=['IB', 'VB0', 'VB2', 'IB2']
+            dump_funcs=[lod.dump_IB1, lod.dump_VB1, lod.dump_VB2, lod.dump_IB2]
             if lod.KDI_buffer_size>0:
-                file=os.path.join(save_folder,'LOD{}_KDI_buffer.buf'.format(i))
-                with open(file, 'wb') as f:
-                    stride, size, offset = lod.dump_KDI_buffer(f)
-                KDI_buffer={'offset': offset, 'stride': stride, 'size': size}
+                buffers+=['KDI_buffer', 'KDI_VB']
+                dump_funcs+=[lod.dump_KDI_buffer, lod.dump_KDI_VB]
 
-                file=os.path.join(save_folder,'LOD{}_KDI_VB.buf'.format(i))
+            log={}            
+            for buffer, dump_func in zip(buffers, dump_funcs):
+                file_name='LOD{}_'.format(i)+buffer+'.buf'
+                file=os.path.join(save_folder, file_name)
                 with open(file, 'wb') as f:
-                    stride, size, offset = lod.dump_KDI_VB(f)
-                KDI_VB={'offset': offset, 'stride': stride, 'size': size}
+                    stride, size, offset = dump_func(f)
+                log[buffer]={'offset': offset, 'stride': stride, 'size': size}
 
-                log['KDI_buffer']=KDI_buffer
-                log['KDI_VB']=KDI_VB
             logs['LOD{}'.format(i)]=log
         
         file=os.path.join(save_folder,'log.json'.format(i))
         with open(file, 'w') as f:
             json.dump(logs, f, indent=4)
 
-
-
-
-
-
-
-
-
-
-
+    def embed_data_into_VB(self, bin):
+        fake_vertex_num = self.LOD[0].embed_data_into_VB(bin)
+        logger.log('metadata has been embedded.', ignore_verbose=True)
+        logger.log('  fake_vertex_num: {}'.format(fake_vertex_num), ignore_verbose=True)

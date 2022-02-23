@@ -3,14 +3,11 @@ import time
 class Logger:
     def __init__(self):
         self.f=open('log.txt', 'w')
-        self.start=time.time()
 
     def set_verbose(self, verbose):
         self.verbose=verbose
 
     def close(self):
-        t=time.time()-self.start
-        self.log('Run time (s): {}'.format(t))
         self.f.close()
 
     def log(self, string, ignore_verbose=False):
@@ -21,5 +18,15 @@ class Logger:
     def error(self, string):
         self.log('Error: {}'.format(string))
         raise RuntimeError(string)
+
+class Timer:
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.start=time.time()
+
+    def now(self):
+        return time.time()-self.start
 
 logger=Logger()
