@@ -8,7 +8,7 @@ def get_args():
     parser.add_argument('ff7r_file')
     parser.add_argument('ue4_18_file', nargs='?')
     parser.add_argument('save_folder')
-    parser.add_argument('--mode', default='import', type=str, help="'import', 'removeLOD', 'valid', 'removeKDI', or 'dumpBuffers'")
+    parser.add_argument('--mode', default='import', type=str, help="'import', 'removeLOD', 'valid', 'removeKDI', 'dumpBuffers', or 'watermark'")
     parser.add_argument('--verbose', action='store_true')
     parser.add_argument('--only_mesh', action='store_true')
     parser.add_argument('--dont_remove_KDI', action='store_true')
@@ -64,6 +64,15 @@ def dump_buffers(ff7r_file, save_folder):
     mesh.dump_buffers(folder)
     logger.log('Done!')
 
+def watermark(ff7r_file, save_folder):
+    mkdir(save_folder)
+    file=os.path.basename(ff7r_file)
+    new_file=os.path.join(save_folder, file)
+    mesh=MeshUexp(ff7r_file)
+    mesh.embed_data_into_VB('MatyaModding'.encode())
+    mesh.save(new_file)
+    logger.log('Done!')
+
 if __name__=='__main__':
     args = get_args()
     ff7r_file=args.ff7r_file
@@ -86,6 +95,8 @@ if __name__=='__main__':
         remove_KDI(ff7r_file, save_folder)
     elif mode=='dumpBuffers':
         dump_buffers(ff7r_file, save_folder)
+    elif mode=='watermark':
+        watermark(ff7r_file, save_folder)
     else:
         logger.error('Unsupported mode.')
 

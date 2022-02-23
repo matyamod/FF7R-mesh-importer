@@ -129,13 +129,15 @@ class Vertex:
     #group_id: id of vertex group (not bone id) [id1, id2, ...]
     #weight: weight [id1's weight, id2's weight, ...]
     '''
-    def __init__(self, f, uv_num, use_float32UV):
-        self.vb=f.read(20+uv_num*4*(1+use_float32UV))
+    def __init__(self, vb):
+        self.vb=vb
+        
+    def read(f, uv_num, use_float32UV):
         '''
-        self.normal1=read_uint8_array(f, len=4)
-        self.normal2=read_uint8_array(f, len=4)
-        self.pos=read_vec3_f32(f)
-        self.uv=[]
+        normal1=read_uint8_array(f, len=4)
+        normal2=read_uint8_array(f, len=4)
+        pos=read_vec3_f32(f)
+        uv=[]
         if use_float32UV:
             read_func=read_float32
         else:
@@ -143,11 +145,10 @@ class Vertex:
         for i in range(uv_num):
             u=read_func(f)
             v=read_func(f)
-            self.uv.append([u,v])
+            uv.append([u,v])
         '''
-    
-    def read(f, uv_num, use_float32UV):
-        return Vertex(f, uv_num, use_float32UV)
+        vb=f.read(20+uv_num*4*(1+use_float32UV))
+        return Vertex(vb)
     
     def read_influence(self, f, size=8):
         self.vb2=f.read(size)
@@ -534,6 +535,31 @@ class LOD:
 
         for v in self.vertices:
             v.lower_buffer()
+
+    def embed_data_into_VB(self, bin):
+        bin=b''.join([bin, b'\x00'*(-len(bin)%4)])
+        vb_sample=self.vertices[0].vb
+        vb_size=len(vb_sample)
+        vb2_size=self.influence_size
+        normal=vb_sample[:8]
+        true_vertex_num=len(self.vertices)
+        fake_vb=b''.join([normal, b'\x00'*(vb_size-8)])
+        fake_vb2_id=b'\x00'*(vb2_size//2)
+        for i in range(len(bin)//4):
+            fake_vb2=b''.join([fake_vb2_id, bin[i*4:(i+1)*4], b'\x00'*(vb2_size//2-4)])
+            vertex=Vertex(fake_vb)
+            vertex.vb2=fake_vb2
+            self.vertices.append(vertex)
+
+        fake_vertex_num=len(self.vertices)-true_vertex_num
+
+        self.sections[-1].vertex_num+=fake_vertex_num
+        self.KDI_VB=self.KDI_VB+[-1]*fake_vertex_num
+
+        return fake_vertex_num
+
+
+
 
 class PhysicalMesh: #collider or something? low poly mesh.
     #vertices

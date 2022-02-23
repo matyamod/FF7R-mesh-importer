@@ -213,6 +213,11 @@ class MeshUexp:
         with open(file, 'w') as f:
             json.dump(logs, f, indent=4)
 
+    def embed_data_into_VB(self, bin):
+        fake_vertex_num = self.LOD[0].embed_data_into_VB(bin)
+        logger.log('metadata has been embedded.', ignore_verbose=True)
+        logger.log('  fake_vertex_num: {}'.format(fake_vertex_num), ignore_verbose=True)
+
 
 
 
