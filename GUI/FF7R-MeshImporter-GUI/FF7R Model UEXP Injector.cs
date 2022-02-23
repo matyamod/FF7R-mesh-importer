@@ -388,7 +388,21 @@ namespace FF7R_MeshImporter_GUI
                 string strCmdText = "/c " + strApp + " "
     + "\"" + strFFInput + "\"" + " " + "\"" + strUEInput + "\"" + " " + "\"" + strOutput + "\"" + " --mode=" + mode + " "
     + only_mesh + " " + dont_remove_KDI + " --verbose";
-                System.Diagnostics.Process.Start("CMD.exe", strCmdText);
+                System.Diagnostics.ProcessStartInfo procStartInfo =
+                new System.Diagnostics.ProcessStartInfo("cmd", strCmdText);
+                procStartInfo.RedirectStandardOutput = true;
+                procStartInfo.UseShellExecute = false;
+                System.Diagnostics.Process proc = new System.Diagnostics.Process();
+                proc.StartInfo = procStartInfo;
+                proc.Start();
+                string line = "";
+                while ((line = proc.StandardOutput.ReadLine()) != null)
+                {
+                    Console.WriteLine(line);
+                    resultlabel4.Text = line;
+                }
+                proc.WaitForExit();
+                proc.Close();
             }
             else if (radioButton2.Checked) //UE4.18
             {
@@ -405,7 +419,21 @@ namespace FF7R_MeshImporter_GUI
                 string strCmdText = "/c " + strApp + " "
     + "\"" + strUEInput + "\"" + " " + "\"" + strOutput + "\"" + " --mode=" + mode + " "
     + only_mesh + " " + dont_remove_KDI + " --verbose";
-                System.Diagnostics.Process.Start("CMD.exe", strCmdText);
+                System.Diagnostics.ProcessStartInfo procStartInfo =
+                new System.Diagnostics.ProcessStartInfo("cmd", strCmdText);
+                procStartInfo.RedirectStandardOutput = true;
+                procStartInfo.UseShellExecute = false;
+                System.Diagnostics.Process proc = new System.Diagnostics.Process();
+                proc.StartInfo = procStartInfo;
+                proc.Start();
+                string line = "";
+                while ((line = proc.StandardOutput.ReadLine()) != null)
+                {
+                    Console.WriteLine(line);
+                    resultlabel4.Text = line;
+                }
+                proc.WaitForExit();
+                proc.Close();
 
             }
             
