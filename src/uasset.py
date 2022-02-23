@@ -223,7 +223,7 @@ class Uasset:
 
     def __init__(self, uasset_file):
         if uasset_file[-7:]!='.uasset':
-            logger.error('File extension error (not .uasset)')
+            logger.error('Not .uasset. ({})'.format(uasset_file))
 
         logger.log('Loading '+uasset_file+'...', ignore_verbose=True)
 

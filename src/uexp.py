@@ -23,7 +23,7 @@ class MeshUexp:
 
     def load(self, file):
         if file[-4:]!='uexp':
-            logger.error('Not .uexp!')
+            logger.error('Not .uexp! ({})'.format(file))
 
         #get name list and export data from .uasset
         uasset_file=file[:-4]+'uasset'
@@ -36,7 +36,7 @@ class MeshUexp:
         self.ff7r = self.uasset.ff7r
         self.skeletal = self.uasset.skeletal
         if not self.skeletal:
-            logger.error('Not skeletal mesh.')
+            logger.error('Not skeletal mesh. ({})'.format(file))
         logger.log('FF7R: {}'.format(self.ff7r))
 
         logger.log('')

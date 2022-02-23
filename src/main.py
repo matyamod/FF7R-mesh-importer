@@ -16,7 +16,6 @@ def get_args():
     return args
 
 def import_mesh(ff7r_file, ue4_18_file, save_folder, only_mesh=False, dont_remove_KDI=False):
-    mkdir(save_folder)
     file=os.path.basename(ff7r_file)
     trg_mesh=MeshUexp(ff7r_file)
     src_mesh=MeshUexp(ue4_18_file)
@@ -25,7 +24,6 @@ def import_mesh(ff7r_file, ue4_18_file, save_folder, only_mesh=False, dont_remov
     trg_mesh.save(new_file)
 
 def remove_LOD(ff7r_file, save_folder):
-    mkdir(save_folder)
     file=os.path.basename(ff7r_file)
     new_file=os.path.join(save_folder, file)
     mesh=MeshUexp(ff7r_file)
@@ -33,7 +31,6 @@ def remove_LOD(ff7r_file, save_folder):
     mesh.save(new_file)
 
 def valid(ff7r_file, save_folder):
-    mkdir(save_folder)
     file=os.path.basename(ff7r_file)
     new_file=os.path.join(save_folder, file)
     mesh=MeshUexp(ff7r_file)
@@ -43,7 +40,6 @@ def valid(ff7r_file, save_folder):
     logger.log('Valid!')
 
 def remove_KDI(ff7r_file, save_folder):
-    mkdir(save_folder)
     file=os.path.basename(ff7r_file)
     new_file=os.path.join(save_folder, file)
     mesh=MeshUexp(ff7r_file)
@@ -58,7 +54,6 @@ def dump_buffers(ff7r_file, save_folder):
     mesh.dump_buffers(folder)
 
 def watermark(ff7r_file, save_folder):
-    mkdir(save_folder)
     file=os.path.basename(ff7r_file)
     new_file=os.path.join(save_folder, file)
     mesh=MeshUexp(ff7r_file)
@@ -75,8 +70,13 @@ if __name__=='__main__':
     verbose=args.verbose
     only_mesh=args.only_mesh
     dont_remove_KDI=args.dont_remove_KDI
-    logger.set_verbose(verbose)
 
+    logger.set_verbose(verbose)
+    if ff7r_file=='':
+        logger.error('Specify uexp file.')
+    if save_folder!='':
+        mkdir(save_folder)
+    
     logger.log('mode: '+mode)
     if mode=='import':
         import_mesh(ff7r_file, ue4_18_file, save_folder, only_mesh=only_mesh, dont_remove_KDI=dont_remove_KDI)
