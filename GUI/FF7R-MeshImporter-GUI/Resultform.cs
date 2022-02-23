@@ -10,9 +10,9 @@ using System.Windows.Forms;
 
 namespace FF7R_MeshImporter_GUI
 {
-    public partial class Dialog : Form
+    public partial class Resultform : Form
     {
-        public Dialog()
+        public Resultform()
         {
             InitializeComponent();
         }

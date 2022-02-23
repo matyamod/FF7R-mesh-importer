@@ -1,5 +1,6 @@
 using FF7R_MeshImporter_GUI.Properties;
 using Microsoft.WindowsAPICodePack.Dialogs;
+using System.Windows.Forms;
 
 namespace FF7R_MeshImporter_GUI
 {
@@ -335,6 +336,8 @@ namespace FF7R_MeshImporter_GUI
 
         private void button4_Click(object sender, EventArgs e)
         {
+            var Resultform = new Resultform();
+            Resultform.Location = Cursor.Position;
             string strFFInput = textBox7RInput.Text;
             string strUEInput = textBoxUEInput.Text;
             string strOutput = textBoxOutput.Text;
@@ -388,6 +391,7 @@ namespace FF7R_MeshImporter_GUI
                 string strCmdText = "/c " + strApp + " "
     + "\"" + strFFInput + "\"" + " " + "\"" + strUEInput + "\"" + " " + "\"" + strOutput + "\"" + " --mode=" + mode + " "
     + only_mesh + " " + dont_remove_KDI + " --verbose";
+
                 System.Diagnostics.ProcessStartInfo procStartInfo =
                 new System.Diagnostics.ProcessStartInfo("cmd", strCmdText);
                 procStartInfo.RedirectStandardOutput = true;
@@ -395,6 +399,8 @@ namespace FF7R_MeshImporter_GUI
                 System.Diagnostics.Process proc = new System.Diagnostics.Process();
                 proc.StartInfo = procStartInfo;
                 proc.Start();
+                Resultform.Show();
+                Resultform.Refresh();
                 string pre_line = "";
                 string line = "";
                 while ((line = proc.StandardOutput.ReadLine()) != null)
@@ -403,6 +409,7 @@ namespace FF7R_MeshImporter_GUI
                     pre_line = line;
                 }
                 proc.WaitForExit();
+                Resultform.Close();
                 proc.Close();
                 resultlabel4.Text = pre_line;
             }
@@ -428,6 +435,8 @@ namespace FF7R_MeshImporter_GUI
                 System.Diagnostics.Process proc = new System.Diagnostics.Process();
                 proc.StartInfo = procStartInfo;
                 proc.Start();
+                Resultform.Show();
+                Resultform.Refresh();
                 string pre_line = "";
                 string line = "";
                 while ((line = proc.StandardOutput.ReadLine()) != null)
@@ -436,6 +445,7 @@ namespace FF7R_MeshImporter_GUI
                     pre_line = line;
                 }
                 proc.WaitForExit();
+                Resultform.Close();
                 proc.Close();
                 resultlabel4.Text = pre_line;
 
