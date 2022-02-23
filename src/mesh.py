@@ -14,7 +14,7 @@ class LODSection:
 
     def __init__(self, f, ff7r=True):
         #print(f.tell())
-
+        self.ff7r=ff7r
         one = read_uint16(f)
         check(one, 1, f, 'Parse failed! (LOD_Section:StripFlags)')
         self.material_id=read_uint16(f)
@@ -79,7 +79,7 @@ class LODSection:
         f.write(LODSection.CorrespondClothAssetIndex)
         write_null_array(f, 4)
         write_int32(f,-1)
-        if section.unk1 is not None:
+        if section.ff7r and section.unk1 is not None:
             write_uint32(f, section.unk1)
             write_uint32(f, len(section.unk2)//16)
             write_uint8_array(f, section.unk2)
@@ -265,14 +265,17 @@ class LOD:
         
         i=read_uint32(f)
         if i==0:
+            self.null8=True
             read_null(f, 'Parse failed! (LOD:null2)')
         else:
+            self.null8=False
             f.seek(-4,1)
 
         chk=read_uint32(f)
         if chk==vertex_num:
-            read_uint32_array(f, len=vertex_num+1)
+            self.unk_ids=read_uint32_array(f, len=vertex_num+1)
         else:
+            self.unk_ids=None
             f.seek(-4,1)
 
         self.vertex_block_offset=f.tell()
@@ -374,7 +377,6 @@ class LOD:
         data=f.read(vertex_num*stride)
         return data
 
-
     def write(f, lod):
         write_uint16(f, 1)
         write_array(f, lod.sections, LODSection.write, with_length=True)
@@ -386,11 +388,27 @@ class LOD:
         write_uint32(f, len(lod.vertices))
         write_uint32(f, len(lod.required_bone_ids)//2)
         f.write(lod.required_bone_ids)
+        
         #write_uint16_array(f, lod.required_bone_ids, with_length=True)
-        write_null(f)
-        write_null(f)
+        if lod.null8:
+            write_null(f)
+            write_null(f)
+        if lod.unk_ids is not None:
+            write_uint32(f, len(lod.vertices))
+            write_uint32_array(f, lod.unk_ids)
         write_uint16(f, lod.uv_num)
         lod.write_vertices(f)
+
+        if lod.unknown_vertex_data is not None:
+            write_uint16(f,1)
+            stride=4
+            write_uint32(f,stride)
+            vertex_num=len(lod.unknown_vertex_data)//stride
+            write_uint32(f, vertex_num)
+            write_uint32(f,stride)
+            write_uint32(f, vertex_num)
+            f.write(lod.unknown_vertex_data)
+
         LOD.write_faces(f, lod.face2_uint_type, lod.faces2)
         if lod.KDI_buffer_size>0:
             write_uint16(f, 1)
