@@ -1,7 +1,7 @@
 import os, argparse
 from io_util import *
 from uexp import MeshUexp
-from logger import logger
+from logger import Timer, logger
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -18,14 +18,11 @@ def get_args():
 def import_mesh(ff7r_file, ue4_18_file, save_folder, only_mesh=False, dont_remove_KDI=False):
     mkdir(save_folder)
     file=os.path.basename(ff7r_file)
-
     trg_mesh=MeshUexp(ff7r_file)
     src_mesh=MeshUexp(ue4_18_file)
     trg_mesh.import_LODs(src_mesh, only_mesh=only_mesh, dont_remove_KDI=dont_remove_KDI)
-
     new_file=os.path.join(save_folder, file)
     trg_mesh.save(new_file)
-    logger.log('Done!')
 
 def remove_LOD(ff7r_file, save_folder):
     mkdir(save_folder)
@@ -34,7 +31,6 @@ def remove_LOD(ff7r_file, save_folder):
     mesh=MeshUexp(ff7r_file)
     mesh.remove_LODs()
     mesh.save(new_file)
-    logger.log('Done!')
 
 def valid(ff7r_file, save_folder):
     mkdir(save_folder)
@@ -54,7 +50,6 @@ def remove_KDI(ff7r_file, save_folder):
     mesh=MeshUexp(ff7r_file)
     mesh.remove_KDI()
     mesh.save(new_file)
-    logger.log('Done!')
 
 def dump_buffers(ff7r_file, save_folder):
     file=os.path.basename(ff7r_file)
@@ -62,7 +57,6 @@ def dump_buffers(ff7r_file, save_folder):
     mkdir(folder)
     mesh=MeshUexp(ff7r_file)
     mesh.dump_buffers(folder)
-    logger.log('Done!')
 
 def watermark(ff7r_file, save_folder):
     mkdir(save_folder)
@@ -71,9 +65,9 @@ def watermark(ff7r_file, save_folder):
     mesh=MeshUexp(ff7r_file)
     mesh.embed_data_into_VB('MatyaModding'.encode())
     mesh.save(new_file)
-    logger.log('Done!')
 
 if __name__=='__main__':
+    timer = Timer()
     args = get_args()
     ff7r_file=args.ff7r_file
     ue4_18_file=args.ue4_18_file
@@ -100,4 +94,6 @@ if __name__=='__main__':
     else:
         logger.error('Unsupported mode.')
 
+    t=timer.now()
+    logger.log('Success! Run time (s): {}'.format(t))
     logger.close()
