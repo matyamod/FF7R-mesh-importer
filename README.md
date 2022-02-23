@@ -6,7 +6,7 @@ A tool for importing skeletal meshes into uassets extracted from FF7R
 
 ## Notes
 
-- This is an beta version. There may be bugs.
+- This is a beta version. There may be bugs.
 - Able to edit vertices, faces, uv maps, and bone weights.
 - Unable to edit bones.
 - Unable to add materials and uv maps.
