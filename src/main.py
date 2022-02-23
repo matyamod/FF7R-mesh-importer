@@ -37,10 +37,9 @@ def valid(ff7r_file, save_folder):
     file=os.path.basename(ff7r_file)
     new_file=os.path.join(save_folder, file)
     mesh=MeshUexp(ff7r_file)
-    if mesh.ff7r:
-        mesh.save(new_file)
-        compare(ff7r_file, new_file)
-        compare(ff7r_file[:-4]+'uasset', new_file[:-4]+'uasset')
+    mesh.save(new_file)
+    compare(ff7r_file, new_file)
+    compare(ff7r_file[:-4]+'uasset', new_file[:-4]+'uasset')
     logger.log('Valid!')
 
 def remove_KDI(ff7r_file, save_folder):

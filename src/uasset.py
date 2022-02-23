@@ -129,6 +129,7 @@ class UassetImport: #28 bytes
         self.bin2=f.read(8)
         self.name_id=read_uint32(f)
         self.bin3=f.read(4)
+        self.material=False
 
     def read(f):
         return UassetImport(f)
@@ -141,20 +142,20 @@ class UassetImport: #28 bytes
         f.write(import_.bin3)
 
     def name_imports(imports, name_list):
-        material_name_id_list=[]
+        material_name_list=[]
         ff7r=False
         skeletal=False
         for import_ in imports:
             import_.name=name_list[import_.name_id]
             import_.class_name=name_list[import_.class_id]
             if import_.class_name in ['Material', 'MaterialInstanceConstant']:
-                material_name_id_list.append(import_.name_id)
+                import_.material=True
             if import_.class_name=='MaterialInstanceConstant':
                 ff7r=True
             if import_.class_name=='SkeletalMesh':
                 skeletal=True
             
-        return material_name_id_list, ff7r, skeletal
+        return ff7r, skeletal
 
     def print(self, padding=2):
         pad=' '*padding
@@ -249,7 +250,7 @@ class Uasset:
         self.bin2=f.read(self.header.import_offset-offset)
 
         self.imports=read_array(f, UassetImport.read, len=self.header.import_num)
-        self.material_name_id_list, self.ff7r, self.skeletal=UassetImport.name_imports(self.imports, self.name_list)
+        self.ff7r, self.skeletal=UassetImport.name_imports(self.imports, self.name_list)
         logger.log('Import')
         for import_ in self.imports:
             import_.print()
@@ -267,7 +268,7 @@ class Uasset:
         f.close()
     
     def save(self, file):
-        logger.log('Saving '+file+'...')
+        logger.log('Saving '+file+'...', ignore_verbose=True)
         with open(file, 'wb') as f:
             UassetHeader.write(f, self.header)
             f.write(self.bin1)
