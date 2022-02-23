@@ -59,6 +59,7 @@
             this.flowLayoutPanel2 = new System.Windows.Forms.FlowLayoutPanel();
             this.resultlabel4 = new System.Windows.Forms.Label();
             this.flowLayoutPanel3 = new System.Windows.Forms.FlowLayoutPanel();
+            this.fontDialog1 = new System.Windows.Forms.FontDialog();
             this.menuStrip1.SuspendLayout();
             this.groupBoxAppMode.SuspendLayout();
             this.groupBox7RInject.SuspendLayout();
@@ -484,5 +485,6 @@
         private RichTextBox resultTextBox;
         private Label resultlabel4;
         private FlowLayoutPanel flowLayoutPanel3;
+        private FontDialog fontDialog1;
     }
 }

@@ -395,14 +395,16 @@ namespace FF7R_MeshImporter_GUI
                 System.Diagnostics.Process proc = new System.Diagnostics.Process();
                 proc.StartInfo = procStartInfo;
                 proc.Start();
+                string pre_line = "";
                 string line = "";
                 while ((line = proc.StandardOutput.ReadLine()) != null)
                 {
                     Console.WriteLine(line);
-                    resultlabel4.Text = line;
+                    pre_line = line;
                 }
                 proc.WaitForExit();
                 proc.Close();
+                resultlabel4.Text = pre_line;
             }
             else if (radioButton2.Checked) //UE4.18
             {
@@ -426,14 +428,16 @@ namespace FF7R_MeshImporter_GUI
                 System.Diagnostics.Process proc = new System.Diagnostics.Process();
                 proc.StartInfo = procStartInfo;
                 proc.Start();
+                string pre_line = "";
                 string line = "";
                 while ((line = proc.StandardOutput.ReadLine()) != null)
                 {
                     Console.WriteLine(line);
-                    resultlabel4.Text = line;
+                    pre_line = line;
                 }
                 proc.WaitForExit();
                 proc.Close();
+                resultlabel4.Text = pre_line;
 
             }
             
