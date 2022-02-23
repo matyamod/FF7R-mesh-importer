@@ -33,10 +33,14 @@ def remove_LOD(ff7r_file, save_folder):
 def valid(ff7r_file, save_folder):
     file=os.path.basename(ff7r_file)
     new_file=os.path.join(save_folder, file)
+    if os.path.exists(new_file):
+        logger.error('Valid mode will remove existing file. Delete the file before running. ({})'.format(new_file))
     mesh=MeshUexp(ff7r_file)
     mesh.save(new_file)
     compare(ff7r_file, new_file)
     compare(ff7r_file[:-4]+'uasset', new_file[:-4]+'uasset')
+    os.remove(new_file)
+    os.remove(new_file[:-4]+'uasset')
     logger.log('Valid!')
 
 def remove_KDI(ff7r_file, save_folder):
