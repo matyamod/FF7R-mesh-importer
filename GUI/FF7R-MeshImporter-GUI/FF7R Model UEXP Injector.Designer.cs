@@ -57,9 +57,8 @@
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.flowLayoutPanel2 = new System.Windows.Forms.FlowLayoutPanel();
-            this.resultlabel4 = new System.Windows.Forms.Label();
-            this.flowLayoutPanel3 = new System.Windows.Forms.FlowLayoutPanel();
             this.fontDialog1 = new System.Windows.Forms.FontDialog();
+            this.resultlabel4 = new System.Windows.Forms.Label();
             this.menuStrip1.SuspendLayout();
             this.groupBoxAppMode.SuspendLayout();
             this.groupBox7RInject.SuspendLayout();
@@ -67,7 +66,6 @@
             this.flowLayoutPanel1.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.flowLayoutPanel2.SuspendLayout();
-            this.flowLayoutPanel3.SuspendLayout();
             this.SuspendLayout();
             // 
             // textBox7RInput
@@ -398,24 +396,14 @@
             // 
             // resultlabel4
             // 
-            this.resultlabel4.AutoSize = true;
+            this.resultlabel4.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.resultlabel4.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
-            this.resultlabel4.Location = new System.Drawing.Point(3, 0);
+            this.resultlabel4.Location = new System.Drawing.Point(192, 430);
             this.resultlabel4.Name = "resultlabel4";
-            this.resultlabel4.Size = new System.Drawing.Size(10, 15);
+            this.resultlabel4.Size = new System.Drawing.Size(422, 20);
             this.resultlabel4.TabIndex = 23;
-            this.resultlabel4.Text = " ";
+            this.resultlabel4.Text = "        ";
             this.resultlabel4.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // flowLayoutPanel3
-            // 
-            this.flowLayoutPanel3.Anchor = System.Windows.Forms.AnchorStyles.None;
-            this.flowLayoutPanel3.Controls.Add(this.resultlabel4);
-            this.flowLayoutPanel3.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
-            this.flowLayoutPanel3.Location = new System.Drawing.Point(264, 433);
-            this.flowLayoutPanel3.Name = "flowLayoutPanel3";
-            this.flowLayoutPanel3.Size = new System.Drawing.Size(240, 31);
-            this.flowLayoutPanel3.TabIndex = 24;
             // 
             // Form1
             // 
@@ -423,7 +411,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Control;
             this.ClientSize = new System.Drawing.Size(800, 468);
-            this.Controls.Add(this.flowLayoutPanel3);
+            this.Controls.Add(this.resultlabel4);
             this.Controls.Add(this.flowLayoutPanel2);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.flowLayoutPanel1);
@@ -445,8 +433,6 @@
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.flowLayoutPanel2.ResumeLayout(false);
-            this.flowLayoutPanel3.ResumeLayout(false);
-            this.flowLayoutPanel3.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -483,8 +469,7 @@
         private GroupBox groupBox1;
         private FlowLayoutPanel flowLayoutPanel2;
         private RichTextBox resultTextBox;
-        private Label resultlabel4;
-        private FlowLayoutPanel flowLayoutPanel3;
         private FontDialog fontDialog1;
+        private Label resultlabel4;
     }
 }
