@@ -33,6 +33,7 @@ class MeshUexp:
         self.exports=self.uasset.exports
         self.material_name_id_list=self.uasset.material_name_id_list
         self.ff7r=self.uasset.ff7r
+        self.skeletal=self.uasset.skeletal
         logger.log('FF7R: {}'.format(self.ff7r))
 
         logger.log('')
@@ -172,41 +173,20 @@ class MeshUexp:
         logs={}
         for lod,i in zip(self.LOD, range(len(self.LOD))):
 
-            file=os.path.join(save_folder,'LOD{}_IB.buf'.format(i))
-            with open(file, 'wb') as f:
-                stride, size, offset = lod.dump_IB1(f)
-            ib1={'offset': offset, 'stride': stride, 'size': size}
-            
-            file=os.path.join(save_folder,'LOD{}_VB0.buf'.format(i))
-            with open(file, 'wb') as f:
-                stride, size, offset = lod.dump_VB1(f)
-            vb1={'offset': offset, 'stride': stride, 'size': size}
-
-            file=os.path.join(save_folder,'LOD{}_VB2.buf'.format(i))
-            with open(file, 'wb') as f:
-                stride, size, offset = lod.dump_VB2(f)
-            vb2={'offset': offset, 'stride': stride, 'size': size}
-            
-            file=os.path.join(save_folder,'LOD{}_IB2.buf'.format(i))
-            with open(file, 'wb') as f:
-                stride, size, offset = lod.dump_IB2(f)
-            ib2={'offset': offset, 'stride': stride, 'size': size}
-
-            log={'IB': ib1, 'VB0': vb1, 'VB2': vb2, 'IB2': ib2}
-
+            buffers=['IB', 'VB0', 'VB2', 'IB2']
+            dump_funcs=[lod.dump_IB1, lod.dump_VB1, lod.dump_VB2, lod.dump_IB2]
             if lod.KDI_buffer_size>0:
-                file=os.path.join(save_folder,'LOD{}_KDI_buffer.buf'.format(i))
-                with open(file, 'wb') as f:
-                    stride, size, offset = lod.dump_KDI_buffer(f)
-                KDI_buffer={'offset': offset, 'stride': stride, 'size': size}
+                buffers+=['KDI_buffer', 'KDI_VB']
+                dump_funcs+=[lod.dump_KDI_buffer, lod.dump_KDI_VB]
 
-                file=os.path.join(save_folder,'LOD{}_KDI_VB.buf'.format(i))
+            log={}            
+            for buffer, dump_func in zip(buffers, dump_funcs):
+                file_name='LOD{}_'.format(i)+buffer+'.buf'
+                file=os.path.join(save_folder, file_name)
                 with open(file, 'wb') as f:
-                    stride, size, offset = lod.dump_KDI_VB(f)
-                KDI_VB={'offset': offset, 'stride': stride, 'size': size}
+                    stride, size, offset = dump_func(f)
+                log[buffer]={'offset': offset, 'stride': stride, 'size': size}
 
-                log['KDI_buffer']=KDI_buffer
-                log['KDI_VB']=KDI_VB
             logs['LOD{}'.format(i)]=log
         
         file=os.path.join(save_folder,'log.json'.format(i))
@@ -217,14 +197,3 @@ class MeshUexp:
         fake_vertex_num = self.LOD[0].embed_data_into_VB(bin)
         logger.log('metadata has been embedded.', ignore_verbose=True)
         logger.log('  fake_vertex_num: {}'.format(fake_vertex_num), ignore_verbose=True)
-
-
-
-
-
-
-
-
-
-
-

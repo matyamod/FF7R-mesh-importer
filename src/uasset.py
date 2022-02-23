@@ -143,14 +143,18 @@ class UassetImport: #28 bytes
     def name_imports(imports, name_list):
         material_name_id_list=[]
         ff7r=False
+        skeletal=False
         for import_ in imports:
             import_.name=name_list[import_.name_id]
             import_.class_name=name_list[import_.class_id]
-            if import_.class_name=='Material':
+            if import_.class_name in ['Material', 'MaterialInstanceConstant']:
                 material_name_id_list.append(import_.name_id)
             if import_.class_name=='MaterialInstanceConstant':
                 ff7r=True
-        return material_name_id_list, ff7r
+            if import_.class_name=='SkeletalMesh':
+                skeletal=True
+            
+        return material_name_id_list, ff7r, skeletal
 
     def print(self, padding=2):
         pad=' '*padding
@@ -158,8 +162,8 @@ class UassetImport: #28 bytes
         logger.log(pad+'  class: '+self.class_name)
 
 class UassetExport: #104 bytes
-    KNOWN_EXPORTS=['EndEmissiveColorUserData', 'SQEX_BonamikAssetUserData', 'SQEX_KineDriver_AssetUserData', 'SkelMeshBoneAttributeRedirectorUserData']
-    IGNORE=[True, True, True, True]
+    KNOWN_EXPORTS=['EndEmissiveColorUserData', 'SQEX_BonamikAssetUserData', 'SQEX_KineDriver_AssetUserData', 'SkelMeshBoneAttributeRedirectorUserData', 'BodySetup']
+    IGNORE=[True, True, True, True, True]
     #'BodySetup'
     def __init__(self, f):
         self.bin1=f.read(16)
@@ -245,7 +249,7 @@ class Uasset:
         self.bin2=f.read(self.header.import_offset-offset)
 
         self.imports=read_array(f, UassetImport.read, len=self.header.import_num)
-        self.material_name_id_list, self.ff7r=UassetImport.name_imports(self.imports, self.name_list)
+        self.material_name_id_list, self.ff7r, self.skeletal=UassetImport.name_imports(self.imports, self.name_list)
         logger.log('Import')
         for import_ in self.imports:
             import_.print()
