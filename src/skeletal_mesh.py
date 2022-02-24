@@ -34,6 +34,12 @@ class Material:
         logger.log(pad+'import_name: {}'.format(self.import_name))
         logger.log(pad+'name: {}'.format(self.name))
 
+    def compare_names(materials1, materials2):
+        num = min(len(materials1), len(materials2))
+        for m1, m2 in zip(materials1[:num], materials2[:num]):
+            if m1.import_name!=m2.import_name:
+                logger.error('Material names do not match. The appearance of the mesh will go wrong. ({}, {})'.format(m1.import_name, m2.import_name))
+
 class SkeletalMesh:
     #unk: ?
     #materials: material names
@@ -120,6 +126,8 @@ class SkeletalMesh:
 
         if len(self.skeleton.bones)!=len(skeletalmesh.skeleton.bones):
             logger.error('Skeletons are not the same.')
+
+        Material.compare_names(self.materials, skeletalmesh.materials)
         
         if not only_mesh:
             self.skeleton.import_bones(skeletalmesh.skeleton.bones)
