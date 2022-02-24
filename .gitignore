@@ -13,6 +13,9 @@ build
 dist
 *.spec
 
+#log
+error*.txt
+
 # uasset
 *.uexp
 *.uasset
