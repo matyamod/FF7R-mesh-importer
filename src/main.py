@@ -26,6 +26,7 @@ def import_mesh(ff7r_file, ue4_18_file, save_folder, only_mesh=False, dont_remov
         trg_mesh.embed_data_into_VB(Cipher.encrypt(author))
     new_file=os.path.join(save_folder, file)
     trg_mesh.save(new_file)
+    return 'Success!'
 
 def remove_LOD(ff7r_file, save_folder):
     file=os.path.basename(ff7r_file)
@@ -33,6 +34,7 @@ def remove_LOD(ff7r_file, save_folder):
     mesh=MeshUexp(ff7r_file)
     mesh.remove_LODs()
     mesh.save(new_file)
+    return 'Success!'
 
 def valid(ff7r_file, save_folder):
     file=os.path.basename(ff7r_file)
@@ -41,19 +43,21 @@ def valid(ff7r_file, save_folder):
         logger.error('Valid mode will remove existing file. Delete the file before running. ({})'.format(new_file))
     mesh=MeshUexp(ff7r_file)
     metadata = mesh.get_metadata()
-    if len(metadata)>0:
-        author = Cipher.decrypt(metadata)
-        logger.log('Author: {}'.format(author), ignore_verbose=True)
+    author = Cipher.decrypt(metadata)
 
     mesh.save(new_file)
     try:
         compare(ff7r_file, new_file)
         compare(ff7r_file[:-4]+'uasset', new_file[:-4]+'uasset')
-        logger.log('Valid!')
+        msg='Valid!'+' Author: {},'.format(author)*(author!='')
+
     except Exception as e:
-        logger.log(e, ignore_verbose=True)
+        os.remove(new_file)
+        os.remove(new_file[:-4]+'uasset')
+        msg='Invalid. '+e
     os.remove(new_file)
     os.remove(new_file[:-4]+'uasset')
+    return msg
     
 
 def remove_KDI(ff7r_file, save_folder):
@@ -62,6 +66,7 @@ def remove_KDI(ff7r_file, save_folder):
     mesh=MeshUexp(ff7r_file)
     mesh.remove_KDI()
     mesh.save(new_file)
+    return 'Success!'
 
 def dump_buffers(ff7r_file, save_folder):
     file=os.path.basename(ff7r_file)
@@ -69,6 +74,7 @@ def dump_buffers(ff7r_file, save_folder):
     mkdir(folder)
     mesh=MeshUexp(ff7r_file)
     mesh.dump_buffers(folder)
+    return 'Success!'
 
 if __name__=='__main__':
     timer = Timer()
@@ -90,18 +96,18 @@ if __name__=='__main__':
     
     logger.log('mode: '+mode)
     if mode=='import':
-        import_mesh(ff7r_file, ue4_18_file, save_folder, only_mesh=only_mesh, dont_remove_KDI=dont_remove_KDI, author=author)
+        msg = import_mesh(ff7r_file, ue4_18_file, save_folder, only_mesh=only_mesh, dont_remove_KDI=dont_remove_KDI, author=author)
     elif mode=='removeLOD':
-        remove_LOD(ff7r_file, save_folder)
+        msg = remove_LOD(ff7r_file, save_folder)
     elif mode=='valid':
-        valid(ff7r_file, save_folder)
+        msg = valid(ff7r_file, save_folder)
     elif mode=='removeKDI':
-        remove_KDI(ff7r_file, save_folder)
+        msg = remove_KDI(ff7r_file, save_folder)
     elif mode=='dumpBuffers':
-        dump_buffers(ff7r_file, save_folder)
+        msg = dump_buffers(ff7r_file, save_folder)
     else:
         logger.error('Unsupported mode.')
 
     t=timer.now()
-    logger.log('Success! Run time (s): {}'.format(t))
+    logger.log('{} Run time (s): {}'.format(msg, t))
     logger.close()
