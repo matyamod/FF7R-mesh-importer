@@ -210,3 +210,6 @@ class MeshUexp:
         fake_vertex_num = self.LOD[0].embed_data_into_VB(bin)
         logger.log('metadata has been embedded.', ignore_verbose=True)
         logger.log('  fake_vertex_num: {}'.format(fake_vertex_num), ignore_verbose=True)
+
+    def get_metadata(self):
+        return self.LOD[0].get_metadata()
