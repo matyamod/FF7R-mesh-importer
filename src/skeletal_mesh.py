@@ -22,8 +22,8 @@ class Material:
         write_uint32(f, material.name_id)
         f.write(material.bin)
 
-    def print_materials(materials, name_list, imports):
-        logger.log('Materials')
+    def print_materials(materials, name_list, imports, offset):
+        logger.log('Materials (offset: {})'.format(offset))
         for material in materials:
             material.name=name_list[material.name_id]
             material.import_name=imports[-material.import_id-1].name
@@ -31,8 +31,8 @@ class Material:
 
     def print(self, padding=2):
         pad=' '*padding
-        logger.log(pad+'import_name: {}'.format(self.import_name))
-        logger.log(pad+'name: {}'.format(self.name))
+        logger.log(pad+self.import_name)
+        logger.log(pad+'  name: {}'.format(self.name))
 
     def compare_names(materials1, materials2):
         num = min(len(materials1), len(materials2))
@@ -77,8 +77,9 @@ class SkeletalMesh:
         f.seek(offset)
         unk=f.read(unk_size)
 
+        material_offset=f.tell()
         materials=read_array(f, Material.read)
-        Material.print_materials(materials, name_list, imports)
+        Material.print_materials(materials, name_list, imports, material_offset)
 
         #skeleton data
         skeleton=Skeleton.read(f)
@@ -177,6 +178,7 @@ class SkeletalMesh:
         with open(file, 'w') as f:
             json.dump(logs, f, indent=4)
 
+    '''
     def embed_data_into_VB(self, bin):
         fake_vertex_num = self.LODs[0].embed_data_into_VB(bin)
         logger.log('metadata has been embedded.', ignore_verbose=True)
@@ -184,5 +186,6 @@ class SkeletalMesh:
 
     def get_metadata(self):
         return self.LODs[0].get_metadata()
+    '''
 
         

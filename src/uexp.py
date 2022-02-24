@@ -4,6 +4,7 @@ import os
 #my libs
 from io_util import *
 from logger import logger
+from cipher import Cipher
 
 from skeletal_mesh import SkeletalMesh
 #from unknown_block import unknown
@@ -12,6 +13,7 @@ from uasset import Uasset
 class MeshUexp:
 
     UNREAL_SIGNATURE=b'\xC1\x83\x2A\x9E'
+    
     def __init__(self, file):
         self.load(file)
 
@@ -53,8 +55,14 @@ class MeshUexp:
                         self.unknown2=f.read(export.offset+export.size-f.tell()-self.uasset.size)
 
             #footer
+            offset = f.tell()
+            size = get_size(f)
+            self.meta=f.read(size-offset-4)
+            self.author = Cipher.decrypt(self.meta)
+            if self.author!='':
+                print('Author: {}'.format(self.author))
             self.foot=f.read()
-            check(self.foot[-4:], MeshUexp.UNREAL_SIGNATURE, f, 'Parse failed. (foot)')
+            check(self.foot, MeshUexp.UNREAL_SIGNATURE, f, 'Parse failed. (foot)')
 
     def save(self, file):
         logger.log('Saving '+file+'...', ignore_verbose=True)
@@ -71,8 +79,10 @@ class MeshUexp:
                         size=f.tell()-offset
                 export.update(size, offset+self.uasset.size)
 
+            f.write(self.meta)
             f.write(self.foot)
-        self.uasset.save(file[:-4]+'uasset')
+            uexp_size=f.tell()
+        self.uasset.save(file[:-4]+'uasset', uexp_size)
 
     def remove_LODs(self):
         if self.skeletal:
@@ -93,10 +103,14 @@ class MeshUexp:
         if self.skeletal:
             self.skeletalmesh.dump_buffers(save_folder)
 
-    def embed_data_into_VB(self, bin):
-        if self.skeletal:
-            self.skeletalmesh.embed_data_into_VB(bin)
+    def embed_string(self, string):
+        #self.skeletalmesh.embed_data_into_VB(bin)
+        self.author=string
+        self.meta=Cipher.encrypt(string)
+        logger.log('A string has been embedded into uexp.', ignore_verbose=True)
+        logger.log('  string: {}'.format(string))
+        logger.log('  size: {}'.format(len(self.meta)), ignore_verbose=True)
 
-    def get_metadata(self):
-        if self.skeletal:
-            return self.skeletalmesh.get_metadata()
+    def get_author(self):
+        return self.author
+        #return self.skeletalmesh.get_metadata()
