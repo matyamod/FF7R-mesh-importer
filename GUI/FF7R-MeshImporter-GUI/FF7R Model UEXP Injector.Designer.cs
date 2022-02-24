@@ -263,7 +263,7 @@
             this.groupBox7RInject.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
             this.groupBox7RInject.Location = new System.Drawing.Point(3, 3);
             this.groupBox7RInject.Name = "groupBox7RInject";
-            this.groupBox7RInject.Size = new System.Drawing.Size(418, 193);
+            this.groupBox7RInject.Size = new System.Drawing.Size(418, 200);
             this.groupBox7RInject.TabIndex = 18;
             this.groupBox7RInject.TabStop = false;
             this.groupBox7RInject.Text = "FF7R Injection Options";
@@ -280,7 +280,7 @@
             // authortextBox1
             // 
             this.authortextBox1.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.authortextBox1.Location = new System.Drawing.Point(207, 165);
+            this.authortextBox1.Location = new System.Drawing.Point(207, 167);
             this.authortextBox1.Name = "authortextBox1";
             this.authortextBox1.Size = new System.Drawing.Size(193, 22);
             this.authortextBox1.TabIndex = 5;
@@ -351,9 +351,9 @@
             this.groupBoxUEOpt.Controls.Add(this.radioButtonUEModeValid);
             this.groupBoxUEOpt.Controls.Add(this.radioButtonUEModeDump);
             this.groupBoxUEOpt.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
-            this.groupBoxUEOpt.Location = new System.Drawing.Point(3, 202);
+            this.groupBoxUEOpt.Location = new System.Drawing.Point(3, 209);
             this.groupBoxUEOpt.Name = "groupBoxUEOpt";
-            this.groupBoxUEOpt.Size = new System.Drawing.Size(406, 167);
+            this.groupBoxUEOpt.Size = new System.Drawing.Size(418, 167);
             this.groupBoxUEOpt.TabIndex = 19;
             this.groupBoxUEOpt.TabStop = false;
             this.groupBoxUEOpt.Text = "UE 4.18 Validation Options";
@@ -387,7 +387,7 @@
             this.flowLayoutPanel1.Controls.Add(this.groupBoxUEOpt);
             this.flowLayoutPanel1.Location = new System.Drawing.Point(189, 189);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(425, 203);
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(425, 207);
             this.flowLayoutPanel1.TabIndex = 20;
             // 
             // groupBox1
