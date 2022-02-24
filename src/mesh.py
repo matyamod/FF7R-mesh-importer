@@ -555,6 +555,9 @@ class LOD:
             v.lower_buffer()
 
     def embed_data_into_VB(self, bin):
+        size=len(bin)
+        if size>=256:
+            logger.error('The length of author name should be smaller than 256.')
         bin=b''.join([bin, b'\x00'*(-len(bin)%4)])
         vb_sample=self.vertices[0].vb
         vb_size=len(vb_sample)
@@ -568,13 +571,36 @@ class LOD:
             vertex=Vertex(fake_vb)
             vertex.vb2=fake_vb2
             self.vertices.append(vertex)
+        fake_vertex_num=len(self.vertices)-true_vertex_num+1
 
-        fake_vertex_num=len(self.vertices)-true_vertex_num
+        bin=[0,13,fake_vertex_num, size]
+        bin=[b.to_bytes(1, 'big') for b in bin]
+        bin=b''.join(bin)
+        fake_vb2=b''.join([fake_vb2_id, bin, b'\x00'*(vb2_size//2-4)])
+        vertex=Vertex(fake_vb)
+        vertex.vb2=fake_vb2
+        self.vertices.append(vertex)
 
         self.sections[-1].vertex_num+=fake_vertex_num
-        self.KDI_VB=self.KDI_VB+[-1]*fake_vertex_num
+        if self.KDI_buffer_size>0:
+            self.KDI_VB=self.KDI_VB+[-1]*fake_vertex_num
 
         return fake_vertex_num
+
+    def get_metadata(self):
+        v=self.vertices[-1]
+        vb2_size=self.influence_size
+        fake_vb2=list(v.vb2[vb2_size//2:vb2_size//2+4])
+        if fake_vb2[0]!=0 or fake_vb2[1]!=13:
+            return b''
+        fake_vertex_num=fake_vb2[2]
+        size=fake_vb2[3]
+        fake_vertices=self.vertices[-fake_vertex_num:-1]
+        vb_list=[v.vb2[vb2_size//2:vb2_size//2+4] for v in fake_vertices]
+        data = b''.join(vb_list)
+        return data[:size]
+        
+
 
 
 
