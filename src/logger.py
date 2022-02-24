@@ -1,8 +1,12 @@
-import time
+import time, os
 
 class Logger:
+    LOG_FOLDER='log'
     def __init__(self):
-        self.f=open('log.txt', 'w')
+        os.makedirs(Logger.LOG_FOLDER, exist_ok=True)
+        self.file_name = time.strftime('%Y%m%d-%H%M%S'+'.txt')
+        file_path=os.path.join(Logger.LOG_FOLDER, self.file_name)
+        self.f=open(file_path, 'w')
 
     def set_verbose(self, verbose):
         self.verbose=verbose
@@ -17,6 +21,11 @@ class Logger:
 
     def error(self, string):
         self.log('Error: {}'.format(string))
+        self.close()
+        file_path=os.path.join(Logger.LOG_FOLDER, self.file_name)
+        self.file_name = 'error-'+self.file_name
+        err_file_path=os.path.join(Logger.LOG_FOLDER, self.file_name)
+        os.rename(file_path, err_file_path)
         raise RuntimeError(string)
 
 class Timer:
