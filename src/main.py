@@ -46,11 +46,15 @@ def valid(ff7r_file, save_folder):
         logger.log('Author: {}'.format(author), ignore_verbose=True)
 
     mesh.save(new_file)
-    compare(ff7r_file, new_file)
-    compare(ff7r_file[:-4]+'uasset', new_file[:-4]+'uasset')
+    try:
+        compare(ff7r_file, new_file)
+        compare(ff7r_file[:-4]+'uasset', new_file[:-4]+'uasset')
+        logger.log('Valid!')
+    except Exception as e:
+        logger.log(e, ignore_verbose=True)
     os.remove(new_file)
     os.remove(new_file[:-4]+'uasset')
-    logger.log('Valid!')
+    
 
 def remove_KDI(ff7r_file, save_folder):
     file=os.path.basename(ff7r_file)
