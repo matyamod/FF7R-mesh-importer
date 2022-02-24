@@ -178,6 +178,7 @@ class SkeletalMesh:
         with open(file, 'w') as f:
             json.dump(logs, f, indent=4)
 
+    '''
     def embed_data_into_VB(self, bin):
         fake_vertex_num = self.LODs[0].embed_data_into_VB(bin)
         logger.log('metadata has been embedded.', ignore_verbose=True)
@@ -185,5 +186,6 @@ class SkeletalMesh:
 
     def get_metadata(self):
         return self.LODs[0].get_metadata()
+    '''
 
         

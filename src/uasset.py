@@ -71,9 +71,9 @@ class UassetHeader:
         self.unk3=f.read(4)
         read_null(f, 'Parse Failed.')
         self.padding_offset = read_uint32(f)
-        self.unk4=f.read(4)
+        self.file_length=read_uint32(f)
         read_null_array(f, 3, 'Parse Failed.')
-        self.unk5=f.read(4)
+        self.unk4=f.read(4)
         self.file_data_offset = read_uint32(f)
 
     def read(f):
@@ -102,9 +102,9 @@ class UassetHeader:
         f.write(header.unk3)
         write_null(f)
         write_uint32(f, header.padding_offset)
-        f.write(header.unk4)
+        write_uint32(f, header.file_length)
         write_null_array(f, 3)
-        f.write(header.unk5)
+        f.write(header.unk4)
         write_uint32(f, header.file_data_offset)
 
 
@@ -120,6 +120,7 @@ class UassetHeader:
         logger.log('  import directory offset: {}'.format(self.import_offset))
         logger.log('  guid hash: {}'.format(self.guid_hash))
         logger.log('  padding offset: {}'.format(self.padding_offset))
+        logger.log('  file length (uasset+uexp-4): {}'.format(self.file_length))
         logger.log('  file data offset: {}'.format(self.file_data_offset))
 
 class UassetImport: #28 bytes
@@ -267,7 +268,8 @@ class Uasset:
         self.bin4=f.read()
         f.close()
     
-    def save(self, file):
+    def save(self, file, uexp_size):
+        self.header.file_length=uexp_size+self.size-4
         logger.log('Saving '+file+'...', ignore_verbose=True)
         with open(file, 'wb') as f:
             UassetHeader.write(f, self.header)

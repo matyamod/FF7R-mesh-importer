@@ -2,18 +2,17 @@ import os, argparse
 from io_util import *
 from uexp import MeshUexp
 from logger import Timer, logger
-from cipher import Cipher
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('ff7r_file')
-    parser.add_argument('ue4_18_file', nargs='?')
-    parser.add_argument('save_folder')
+    parser.add_argument('ff7r_file', help='.uexp file extracted from FF7R')
+    parser.add_argument('ue4_18_file', nargs='?', help='.uexp file exported from UE4.18')
+    parser.add_argument('save_folder', help='New uasset files will be generated here.')
     parser.add_argument('--mode', default='import', type=str, help="'import', 'removeLOD', 'valid', 'removeKDI', or 'dumpBuffers'")
-    parser.add_argument('--verbose', action='store_true')
-    parser.add_argument('--only_mesh', action='store_true')
-    parser.add_argument('--dont_remove_KDI', action='store_true')
-    parser.add_argument('--author', default='', type=str, help='You can embed a string into a weight buffer.')
+    parser.add_argument('--verbose', action='store_true', help='Shows log.')
+    parser.add_argument('--only_mesh', action='store_true', help='Does not import bones.')
+    parser.add_argument('--dont_remove_KDI', action='store_true', help='Does not remove KDI buffers.')
+    parser.add_argument('--author', default='', type=str, help='You can embed a string into uexp.')
     args = parser.parse_args()
     return args
 
@@ -23,7 +22,7 @@ def import_mesh(ff7r_file, ue4_18_file, save_folder, only_mesh=False, dont_remov
     src_mesh=MeshUexp(ue4_18_file)
     trg_mesh.import_LODs(src_mesh, only_mesh=only_mesh, dont_remove_KDI=dont_remove_KDI)
     if author!='':
-        trg_mesh.embed_data_into_VB(Cipher.encrypt(author))
+        trg_mesh.embed_string(author)
     new_file=os.path.join(save_folder, file)
     trg_mesh.save(new_file)
     return 'Success!'
@@ -42,8 +41,7 @@ def valid(ff7r_file, save_folder):
     if os.path.exists(new_file):
         logger.error('Valid mode will remove existing file. Delete the file before running. ({})'.format(new_file))
     mesh=MeshUexp(ff7r_file)
-    metadata = mesh.get_metadata()
-    author = Cipher.decrypt(metadata)
+    author = mesh.get_author()
 
     mesh.save(new_file)
     try:

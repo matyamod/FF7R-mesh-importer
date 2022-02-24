@@ -554,6 +554,7 @@ class LOD:
         for v in self.vertices:
             v.lower_buffer()
 
+    '''
     def embed_data_into_VB(self, bin):
         size=len(bin)
         if size>=256:
@@ -599,11 +600,7 @@ class LOD:
         vb_list=[v.vb2[vb2_size//2:vb2_size//2+4] for v in fake_vertices]
         data = b''.join(vb_list)
         return data[:size]
-        
-
-
-
-
+    '''
 
 class PhysicalMesh: #collider or something? low poly mesh.
     #vertices
