@@ -46,6 +46,8 @@
             this.radioButton2 = new System.Windows.Forms.RadioButton();
             this.groupBoxAppMode = new System.Windows.Forms.GroupBox();
             this.groupBox7RInject = new System.Windows.Forms.GroupBox();
+            this.authorlabel4 = new System.Windows.Forms.Label();
+            this.authortextBox1 = new System.Windows.Forms.TextBox();
             this.radioButtonMdValid = new System.Windows.Forms.RadioButton();
             this.radioButtonMdDump = new System.Windows.Forms.RadioButton();
             this.radioButtonMdLODs = new System.Windows.Forms.RadioButton();
@@ -58,7 +60,7 @@
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.flowLayoutPanel2 = new System.Windows.Forms.FlowLayoutPanel();
             this.fontDialog1 = new System.Windows.Forms.FontDialog();
-            this.resultlabel4 = new System.Windows.Forms.Label();
+            this.richTextBox1 = new System.Windows.Forms.RichTextBox();
             this.menuStrip1.SuspendLayout();
             this.groupBoxAppMode.SuspendLayout();
             this.groupBox7RInject.SuspendLayout();
@@ -202,14 +204,14 @@
             // savePathSettingsToolStripMenuItem
             // 
             this.savePathSettingsToolStripMenuItem.Name = "savePathSettingsToolStripMenuItem";
-            this.savePathSettingsToolStripMenuItem.Size = new System.Drawing.Size(130, 22);
-            this.savePathSettingsToolStripMenuItem.Text = "Save Paths";
+            this.savePathSettingsToolStripMenuItem.Size = new System.Drawing.Size(193, 22);
+            this.savePathSettingsToolStripMenuItem.Text = "Save Paths and Author";
             this.savePathSettingsToolStripMenuItem.Click += new System.EventHandler(this.savePathSettingsToolStripMenuItem_Click);
             // 
             // aboutToolStripMenuItem
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(130, 22);
+            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(193, 22);
             this.aboutToolStripMenuItem.Text = "About";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
@@ -251,6 +253,8 @@
             // 
             // groupBox7RInject
             // 
+            this.groupBox7RInject.Controls.Add(this.authorlabel4);
+            this.groupBox7RInject.Controls.Add(this.authortextBox1);
             this.groupBox7RInject.Controls.Add(this.radioButtonMdValid);
             this.groupBox7RInject.Controls.Add(this.radioButtonMdDump);
             this.groupBox7RInject.Controls.Add(this.radioButtonMdLODs);
@@ -259,10 +263,27 @@
             this.groupBox7RInject.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
             this.groupBox7RInject.Location = new System.Drawing.Point(3, 3);
             this.groupBox7RInject.Name = "groupBox7RInject";
-            this.groupBox7RInject.Size = new System.Drawing.Size(418, 172);
+            this.groupBox7RInject.Size = new System.Drawing.Size(418, 193);
             this.groupBox7RInject.TabIndex = 18;
             this.groupBox7RInject.TabStop = false;
             this.groupBox7RInject.Text = "FF7R Injection Options";
+            // 
+            // authorlabel4
+            // 
+            this.authorlabel4.AutoSize = true;
+            this.authorlabel4.Location = new System.Drawing.Point(7, 169);
+            this.authorlabel4.Name = "authorlabel4";
+            this.authorlabel4.Size = new System.Drawing.Size(200, 15);
+            this.authorlabel4.TabIndex = 6;
+            this.authorlabel4.Text = "Add Authorship Metadata to Import:";
+            // 
+            // authortextBox1
+            // 
+            this.authortextBox1.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.authortextBox1.Location = new System.Drawing.Point(207, 165);
+            this.authortextBox1.Name = "authortextBox1";
+            this.authortextBox1.Size = new System.Drawing.Size(193, 22);
+            this.authortextBox1.TabIndex = 5;
             // 
             // radioButtonMdValid
             // 
@@ -315,10 +336,11 @@
             // checkedListBox7ROpt
             // 
             this.checkedListBox7ROpt.CheckOnClick = true;
+            this.checkedListBox7ROpt.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.checkedListBox7ROpt.FormattingEnabled = true;
             this.checkedListBox7ROpt.Items.AddRange(new object[] {
             "Import Bones (Experimental)",
-            "Don\'t Remove KDI (Not recommended)"});
+            "Keep KDI (Not recommended)"});
             this.checkedListBox7ROpt.Location = new System.Drawing.Point(6, 121);
             this.checkedListBox7ROpt.Name = "checkedListBox7ROpt";
             this.checkedListBox7ROpt.Size = new System.Drawing.Size(394, 40);
@@ -329,7 +351,7 @@
             this.groupBoxUEOpt.Controls.Add(this.radioButtonUEModeValid);
             this.groupBoxUEOpt.Controls.Add(this.radioButtonUEModeDump);
             this.groupBoxUEOpt.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
-            this.groupBoxUEOpt.Location = new System.Drawing.Point(3, 181);
+            this.groupBoxUEOpt.Location = new System.Drawing.Point(3, 202);
             this.groupBoxUEOpt.Name = "groupBoxUEOpt";
             this.groupBoxUEOpt.Size = new System.Drawing.Size(406, 167);
             this.groupBoxUEOpt.TabIndex = 19;
@@ -365,7 +387,7 @@
             this.flowLayoutPanel1.Controls.Add(this.groupBoxUEOpt);
             this.flowLayoutPanel1.Location = new System.Drawing.Point(189, 189);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(425, 185);
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(425, 203);
             this.flowLayoutPanel1.TabIndex = 20;
             // 
             // groupBox1
@@ -389,29 +411,31 @@
             // flowLayoutPanel2
             // 
             this.flowLayoutPanel2.Controls.Add(this.buttonSInject);
-            this.flowLayoutPanel2.Location = new System.Drawing.Point(189, 380);
+            this.flowLayoutPanel2.Location = new System.Drawing.Point(189, 413);
             this.flowLayoutPanel2.Name = "flowLayoutPanel2";
             this.flowLayoutPanel2.Size = new System.Drawing.Size(425, 47);
             this.flowLayoutPanel2.TabIndex = 22;
             // 
-            // resultlabel4
+            // richTextBox1
             // 
-            this.resultlabel4.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.resultlabel4.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
-            this.resultlabel4.Location = new System.Drawing.Point(192, 430);
-            this.resultlabel4.Name = "resultlabel4";
-            this.resultlabel4.Size = new System.Drawing.Size(422, 20);
-            this.resultlabel4.TabIndex = 23;
-            this.resultlabel4.Text = "        ";
-            this.resultlabel4.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.richTextBox1.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
+            this.richTextBox1.ForeColor = System.Drawing.SystemColors.HighlightText;
+            this.richTextBox1.ImeMode = System.Windows.Forms.ImeMode.NoControl;
+            this.richTextBox1.Location = new System.Drawing.Point(195, 463);
+            this.richTextBox1.Name = "richTextBox1";
+            this.richTextBox1.ReadOnly = true;
+            this.richTextBox1.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.ForcedVertical;
+            this.richTextBox1.Size = new System.Drawing.Size(412, 32);
+            this.richTextBox1.TabIndex = 24;
+            this.richTextBox1.Text = "";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Control;
-            this.ClientSize = new System.Drawing.Size(800, 468);
-            this.Controls.Add(this.resultlabel4);
+            this.ClientSize = new System.Drawing.Size(800, 507);
+            this.Controls.Add(this.richTextBox1);
             this.Controls.Add(this.flowLayoutPanel2);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.flowLayoutPanel1);
@@ -470,6 +494,8 @@
         private FlowLayoutPanel flowLayoutPanel2;
         private RichTextBox resultTextBox;
         private FontDialog fontDialog1;
-        private Label resultlabel4;
+        private RichTextBox richTextBox1;
+        private Label authorlabel4;
+        private TextBox authortextBox1;
     }
 }

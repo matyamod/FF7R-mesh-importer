@@ -9,10 +9,14 @@ namespace FF7R_MeshImporter_GUI
         string SetFFDir = Settings.Default.FFInputPath;
         string SetUEDir = Settings.Default.UEInputPath;
         string SetOutDir = Settings.Default.OutputPath;
+        string SetAuth = Settings.Default.Author;
 
         public Form1()
         {
             InitializeComponent();
+            authortextBox1.Text = SetAuth;
+            radioButton1.Checked = true;
+            radioButtonMdInject.Checked = true;
         }
         //
         //Base mode selection
@@ -21,6 +25,7 @@ namespace FF7R_MeshImporter_GUI
         {
             if (radioButton1.Checked)
             {
+                authortextBox1.Text = Settings.Default.Author;
                 radioButtonMdInject.Checked = true;
                 {
                     foreach (Control ctrl in groupBoxUEOpt.Controls)
@@ -269,6 +274,9 @@ namespace FF7R_MeshImporter_GUI
                 textBoxUEInput.Enabled = false;
                 button2.Enabled = false;
                 checkedListBox7ROpt.Enabled = false;
+                authorlabel4.Enabled = false;
+                authortextBox1.Enabled = false;
+                authortextBox1.Text = "";
             }
             else
             {
@@ -276,6 +284,8 @@ namespace FF7R_MeshImporter_GUI
                 textBoxUEInput.Enabled = true;
                 button2.Enabled = true;
                 checkedListBox7ROpt.Enabled = true;
+                authorlabel4.Enabled = true;
+                authortextBox1.Enabled = true;
             }
         }
 
@@ -287,6 +297,9 @@ namespace FF7R_MeshImporter_GUI
                 textBoxUEInput.Enabled = false;
                 button2.Enabled = false;
                 checkedListBox7ROpt.Enabled = false;
+                authorlabel4.Enabled = false;
+                authortextBox1.Enabled = false;
+                authortextBox1.Text = "";
             }
             else
             {
@@ -294,6 +307,8 @@ namespace FF7R_MeshImporter_GUI
                 textBoxUEInput.Enabled = true;
                 button2.Enabled = true;
                 checkedListBox7ROpt.Enabled = true;
+                authorlabel4.Enabled = true;
+                authortextBox1.Enabled = true;
             }
         }
 
@@ -305,6 +320,9 @@ namespace FF7R_MeshImporter_GUI
                 textBoxUEInput.Enabled = false;
                 button2.Enabled = false;
                 checkedListBox7ROpt.Enabled = false;
+                authorlabel4.Enabled = false;
+                authortextBox1.Enabled = false;
+                authortextBox1.Text = "";
             }
             else
             {
@@ -312,6 +330,8 @@ namespace FF7R_MeshImporter_GUI
                 textBoxUEInput.Enabled = true;
                 button2.Enabled = true;
                 checkedListBox7ROpt.Enabled = true;
+                authorlabel4.Enabled = true;
+                authortextBox1.Enabled = true;
             }
         }
 
@@ -323,6 +343,9 @@ namespace FF7R_MeshImporter_GUI
                 textBoxUEInput.Enabled = true;
                 button2.Enabled = true;
                 checkedListBox7ROpt.Enabled = true;
+                authorlabel4.Enabled = true;
+                authortextBox1.Enabled = true;
+                authortextBox1.Text = Settings.Default.Author;
             }
         }
 
@@ -345,6 +368,16 @@ namespace FF7R_MeshImporter_GUI
             string mode = "";
             string only_mesh = "";
             string dont_remove_KDI = "";
+            string authorname = "";
+            if (string.IsNullOrEmpty(authortextBox1.Text))
+            { 
+            authorname = ""; 
+            }
+            else
+            { 
+            authorname = "--author=" + authortextBox1.Text;
+            }
+
 
             //check if main.exe exists
             string strApp = "./src/main.exe";
@@ -390,7 +423,7 @@ namespace FF7R_MeshImporter_GUI
                 }
                 string strCmdText = "/c " + strApp + " "
     + "\"" + strFFInput + "\"" + " " + "\"" + strUEInput + "\"" + " " + "\"" + strOutput + "\"" + " --mode=" + mode + " "
-    + only_mesh + " " + dont_remove_KDI + " --verbose";
+    + only_mesh + " " + dont_remove_KDI + authorname + " --verbose";
 
                 System.Diagnostics.ProcessStartInfo procStartInfo =
                 new System.Diagnostics.ProcessStartInfo("cmd", strCmdText);
@@ -411,7 +444,7 @@ namespace FF7R_MeshImporter_GUI
                 proc.WaitForExit();
                 Resultform.Close();
                 proc.Close();
-                resultlabel4.Text = pre_line;
+                richTextBox1.Text = pre_line;
             }
             else if (radioButton2.Checked) //UE4.18
             {
@@ -447,7 +480,7 @@ namespace FF7R_MeshImporter_GUI
                 proc.WaitForExit();
                 Resultform.Close();
                 proc.Close();
-                resultlabel4.Text = pre_line;
+                richTextBox1.Text = pre_line;
 
             }
             
@@ -463,6 +496,7 @@ namespace FF7R_MeshImporter_GUI
             Settings.Default.FFInputPath = Path.GetDirectoryName(textBox7RInput.Text);
             Settings.Default.UEInputPath = Path.GetDirectoryName(textBoxUEInput.Text);
             Settings.Default.OutputPath = Path.GetDirectoryName(textBoxOutput.Text);
+            Settings.Default.Author = authortextBox1.Text;
             Settings.Default.Save();
         }
 
