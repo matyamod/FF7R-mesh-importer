@@ -17,6 +17,9 @@ namespace FF7R_MeshImporter_GUI
             authortextBox1.Text = SetAuth;
             radioButton1.Checked = true;
             radioButtonMdInject.Checked = true;
+            textBox7RInput.Text = SetFFDir;
+            textBoxUEInput.Text = SetUEDir;
+            textBoxOutput.Text = SetOutDir;
         }
         //
         //Base mode selection
@@ -163,7 +166,7 @@ namespace FF7R_MeshImporter_GUI
                 }
                 else
                 {
-                    ffdialog.InitialDirectory = Path.GetDirectoryName(textBox7RInput.Text);
+                    ffdialog.InitialDirectory = textBox7RInput.Text;
                 }
                 ffdialog.Filter = "UEXP Files|*.uexp";
                 {
@@ -223,7 +226,7 @@ namespace FF7R_MeshImporter_GUI
                 }
                 else
                 {
-                    uedialog.InitialDirectory = Path.GetDirectoryName(textBoxUEInput.Text);
+                    uedialog.InitialDirectory = textBoxUEInput.Text;
                 }
                 uedialog.Filter = "UEXP Files|*.uexp";
                 {
@@ -495,7 +498,7 @@ namespace FF7R_MeshImporter_GUI
         {
             Settings.Default.FFInputPath = Path.GetDirectoryName(textBox7RInput.Text);
             Settings.Default.UEInputPath = Path.GetDirectoryName(textBoxUEInput.Text);
-            Settings.Default.OutputPath = Path.GetDirectoryName(textBoxOutput.Text);
+            Settings.Default.OutputPath = textBoxOutput.Text;
             Settings.Default.Author = authortextBox1.Text;
             Settings.Default.Save();
         }
