@@ -1,23 +1,32 @@
+ver 0.1.5
+- Refine GUI
+- Add --author argument to embed a string into a weight buffer
+- Check material names before importing
+- Valid mode will remove generated files after validation
+- Modify logger to save each log to its own file
+
 ver 0.1.4
-- add GUI
-- import mode will remove KDI buffers
-- set 0.01 to global_scale in the Blender script
+- Add GUI
+- Import mode will remove KDI buffers
+- Set 0.01 to global_scale in the Blender script
+- Refine scripts
+ 
 
 ver 0.1.3
-- optimize some functions
-- add support for importing the stride of VB2
-- add the function to import bones
-- add logger for saving log as log.txt
-- mod the parser to parse ue4.18's asset without setting the number of bones
-- comment out use_space_transform from blender script
-- add the fuction to the parser for detecting if the input file is from FF7R or not
+- Optimize some functions
+- Add support for importing the stride of VB2
+- Add the function to import bones
+- Add logger for saving log as log.txt
+- Mod the parser to parse ue4.18's asset without setting the number of bones
+- Comment out use_space_transform from blender script
+- Add the fuction to the parser for detecting if the input file is from FF7R or not
 
 ver 0.1.2
-- add 'dumpBuffer' mode
-- add 'removeKDI' mode
-- optimize some functions
-- change the scale setting in the Blender script
-- add support for SkelMeshBoneAttributeRedirectorUserData
+- Add 'dumpBuffer' mode
+- Add 'removeKDI' mode
+- Optimize some functions
+- Change the scale setting in the Blender script
+- Add support for SkelMeshBoneAttributeRedirectorUserData
 
 ver 0.1.1
 - Ignore vertex colors

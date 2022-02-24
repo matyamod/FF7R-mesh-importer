@@ -1,7 +1,7 @@
 ![build](https://github.com/matyalatte/FF7R-mesh-importer/actions/workflows/build.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-# FF7R-mesh-importer ver0.1.4
+# FF7R-mesh-importer ver0.1.5
 A tool for importing skeletal meshes into uassets extracted from FF7R
 
 ## Notes
@@ -38,6 +38,10 @@ Download `FF7R-MeshImporter*.zip` from [here](https://github.com/matyalatte/FF7R
 ## Script Usage
 
 ```
+#for non-Python users
+main.exe ff7r_file [ue4_18_file] save_folder [--mode=mode] [options]
+
+#for Python users
 python main.py ff7r_file [ue4_18_file] save_folder [--mode=mode] [options]
 ```
 
@@ -51,6 +55,7 @@ python main.py ff7r_file [ue4_18_file] save_folder [--mode=mode] [options]
 - `--verbose`: Shows log.
 - `--only_mesh`: Does not import bones.
 - `--dont_remove_KDI`: Does not remove KDI buffers.
+- `--author=*`: You can embed a string into a weight buffer.
 
 ## How to Build
 You can build our tool with Github Actions.<br>
