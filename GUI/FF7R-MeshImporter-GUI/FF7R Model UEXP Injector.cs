@@ -166,7 +166,7 @@ namespace FF7R_MeshImporter_GUI
                 }
                 else
                 {
-                    ffdialog.InitialDirectory = textBox7RInput.Text;
+                    ffdialog.InitialDirectory = Path.GetDirectoryName(textBox7RInput.Text);
                 }
                 ffdialog.Filter = "UEXP Files|*.uexp";
                 {
@@ -226,7 +226,7 @@ namespace FF7R_MeshImporter_GUI
                 }
                 else
                 {
-                    uedialog.InitialDirectory = textBoxUEInput.Text;
+                    uedialog.InitialDirectory = Path.GetDirectoryName(textBoxUEInput.Text);
                 }
                 uedialog.Filter = "UEXP Files|*.uexp";
                 {
