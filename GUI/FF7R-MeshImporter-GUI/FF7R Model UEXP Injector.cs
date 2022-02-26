@@ -119,7 +119,17 @@ namespace FF7R_MeshImporter_GUI
         //
         //FF7R File Input
 
-        private void textBox1_TextChanged(object sender, EventArgs e)
+        private void textBox7RInput_Enter(object sender, EventArgs e)
+        {
+            textBox7RInput.SelectionStart = textBox7RInput.Text.Length;
+        }
+
+        private void textBox7RInput_Leave(object sender, EventArgs e)
+        {
+            textBox7RInput.SelectionStart = 0;
+        }
+
+        private void textBox7RInput_TextChanged_1(object sender, EventArgs e)
         {
 
         }
@@ -166,7 +176,15 @@ namespace FF7R_MeshImporter_GUI
                 }
                 else
                 {
-                    ffdialog.InitialDirectory = Path.GetDirectoryName(textBox7RInput.Text);
+                    string ffinidir = textBox7RInput.Text;
+                    if (File.Exists(ffinidir))
+                    {
+                        ffdialog.InitialDirectory = Path.GetDirectoryName(textBox7RInput.Text);
+                    }
+                    else
+                    {
+                        ffdialog.InitialDirectory = textBox7RInput.Text;
+                    }
                 }
                 ffdialog.Filter = "UEXP Files|*.uexp";
                 {
@@ -179,7 +197,18 @@ namespace FF7R_MeshImporter_GUI
         }
         //
         //4.18 Input
-        private void textBox2_TextChanged(object sender, EventArgs e)
+
+        private void textBoxUEInput_Enter(object sender, EventArgs e)
+        {
+            textBoxUEInput.SelectionStart = textBoxUEInput.Text.Length;
+        }
+
+        private void textBoxUEInput_Leave(object sender, EventArgs e)
+        {
+            textBoxUEInput.SelectionStart = 0;
+        }
+
+        private void textBoxUEInput_TextChanged_1(object sender, EventArgs e)
         {
 
         }
@@ -226,7 +255,15 @@ namespace FF7R_MeshImporter_GUI
                 }
                 else
                 {
-                    uedialog.InitialDirectory = Path.GetDirectoryName(textBoxUEInput.Text);
+                    string ueinidir = textBoxUEInput.Text;
+                    if (File.Exists(ueinidir))
+                    {
+                        uedialog.InitialDirectory = Path.GetDirectoryName(textBoxUEInput.Text);
+                    }
+                    else
+                    { 
+                        uedialog.InitialDirectory = textBoxUEInput.Text; 
+                    }
                 }
                 uedialog.Filter = "UEXP Files|*.uexp";
                 {
@@ -239,6 +276,22 @@ namespace FF7R_MeshImporter_GUI
         }
         //
         //Output
+
+        private void textBoxOutput_Enter(object sender, EventArgs e)
+        {
+            textBoxOutput.SelectionStart = textBoxOutput.Text.Length;
+        }
+
+        private void textBoxOutput_Leave(object sender, EventArgs e)
+        {
+            textBoxOutput.SelectionStart = 0;
+        }
+
+        private void textBoxOutput_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
         private void button3_Click(object sender, EventArgs e)
         {
             CommonOpenFileDialog outdialog = new CommonOpenFileDialog();
@@ -263,6 +316,7 @@ namespace FF7R_MeshImporter_GUI
             {
                 textBoxOutput.Text = outdialog.FileName;
             }
+
         }
 
         //
@@ -508,5 +562,7 @@ namespace FF7R_MeshImporter_GUI
             AboutBox1 a = new AboutBox1();
             a.Show();
         }
+
+
     }
 }
