@@ -55,7 +55,7 @@ python main.py ff7r_file [ue4_18_file] save_folder [--mode=mode] [options]
 - `--verbose`: Shows log.
 - `--only_mesh`: Does not import bones.
 - `--dont_remove_KDI`: Does not remove KDI buffers.
-- `--author=*`: You can embed a string into a weight buffer.
+- `--author=*`: Embeds your name into uassets. You can check the author name with valid mode.
 
 ## How to Build
 You can build our tool with Github Actions.<br>
