@@ -35,6 +35,12 @@ Download `FF7R-MeshImporter*.zip` from [here](https://github.com/matyalatte/FF7R
 - `FF7R-MeshImporter-exe*.zip` is for non-Python users.
 - `FF7R-MeshImporter-python*.zip` is for Python users.
 
+## Credits
+- A special thanks to Narknon for the GUI implementation and much discussion.
+- A special thanks to TerryXXX for the tutorial, much discussion, and doing many tests.
+- Thanks to Jordan Tucker for the data map.
+- Thanks to JujuB and Amiibolad for the testing.
+
 ## Script Usage
 
 ```
