@@ -1,7 +1,7 @@
 ![build](https://github.com/matyalatte/FF7R-mesh-importer/actions/workflows/build.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-# FF7R-mesh-importer ver0.1.5
+# FF7R-mesh-importer ver0.1.6
 A tool for importing skeletal meshes into uassets extracted from FF7R
 
 ## Notes
