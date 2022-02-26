@@ -61,6 +61,7 @@
             this.flowLayoutPanel2 = new System.Windows.Forms.FlowLayoutPanel();
             this.fontDialog1 = new System.Windows.Forms.FontDialog();
             this.richTextBox1 = new System.Windows.Forms.RichTextBox();
+            this.flowLayoutPanel3 = new System.Windows.Forms.FlowLayoutPanel();
             this.menuStrip1.SuspendLayout();
             this.groupBoxAppMode.SuspendLayout();
             this.groupBox7RInject.SuspendLayout();
@@ -75,37 +76,48 @@
             this.textBox7RInput.AccessibleDescription = "Base Game Input .uexp";
             this.textBox7RInput.AccessibleName = "7R Input";
             this.textBox7RInput.AllowDrop = true;
-            this.textBox7RInput.Location = new System.Drawing.Point(177, 13);
+            this.textBox7RInput.Location = new System.Drawing.Point(164, 15);
             this.textBox7RInput.Name = "textBox7RInput";
             this.textBox7RInput.PlaceholderText = "Select 7R .uexp File Path or Drop File Here";
+            this.textBox7RInput.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.textBox7RInput.Size = new System.Drawing.Size(418, 23);
             this.textBox7RInput.TabIndex = 1;
+            this.textBox7RInput.WordWrap = false;
+            this.textBox7RInput.TextChanged += new System.EventHandler(this.textBox7RInput_TextChanged_1);
             this.textBox7RInput.DragDrop += new System.Windows.Forms.DragEventHandler(this.textBox1_DragDrop);
             this.textBox7RInput.DragOver += new System.Windows.Forms.DragEventHandler(this.textBox1_DragOver);
+            this.textBox7RInput.Enter += new System.EventHandler(this.textBox7RInput_Enter);
+            this.textBox7RInput.Leave += new System.EventHandler(this.textBox7RInput_Leave);
             // 
             // textBoxUEInput
             // 
             this.textBoxUEInput.AllowDrop = true;
-            this.textBoxUEInput.Location = new System.Drawing.Point(177, 43);
+            this.textBoxUEInput.Location = new System.Drawing.Point(164, 41);
             this.textBoxUEInput.Name = "textBoxUEInput";
             this.textBoxUEInput.PlaceholderText = "Select UE 4.18 .uexp File Path or Drop File Here";
             this.textBoxUEInput.Size = new System.Drawing.Size(418, 23);
             this.textBoxUEInput.TabIndex = 2;
+            this.textBoxUEInput.TextChanged += new System.EventHandler(this.textBoxUEInput_TextChanged_1);
             this.textBoxUEInput.DragDrop += new System.Windows.Forms.DragEventHandler(this.textBox2_DragDrop);
             this.textBoxUEInput.DragOver += new System.Windows.Forms.DragEventHandler(this.textBox2_DragOver);
+            this.textBoxUEInput.Enter += new System.EventHandler(this.textBoxUEInput_Enter);
+            this.textBoxUEInput.Leave += new System.EventHandler(this.textBoxUEInput_Leave);
             // 
             // textBoxOutput
             // 
-            this.textBoxOutput.Location = new System.Drawing.Point(177, 71);
+            this.textBoxOutput.Location = new System.Drawing.Point(164, 70);
             this.textBoxOutput.Name = "textBoxOutput";
             this.textBoxOutput.PlaceholderText = "Select Output Path";
             this.textBoxOutput.Size = new System.Drawing.Size(418, 23);
             this.textBoxOutput.TabIndex = 3;
+            this.textBoxOutput.TextChanged += new System.EventHandler(this.textBoxOutput_TextChanged);
+            this.textBoxOutput.Enter += new System.EventHandler(this.textBoxOutput_Enter);
+            this.textBoxOutput.Leave += new System.EventHandler(this.textBoxOutput_Leave);
             // 
             // button1
             // 
             this.button1.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.button1.Location = new System.Drawing.Point(601, 13);
+            this.button1.Location = new System.Drawing.Point(588, 14);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(27, 23);
             this.button1.TabIndex = 4;
@@ -116,7 +128,7 @@
             // button2
             // 
             this.button2.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.button2.Location = new System.Drawing.Point(601, 43);
+            this.button2.Location = new System.Drawing.Point(588, 41);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(27, 23);
             this.button2.TabIndex = 5;
@@ -141,7 +153,7 @@
             this.label1.BackColor = System.Drawing.SystemColors.ControlLight;
             this.label1.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             this.label1.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.label1.Location = new System.Drawing.Point(31, 16);
+            this.label1.Location = new System.Drawing.Point(18, 18);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(140, 17);
             this.label1.TabIndex = 8;
@@ -153,7 +165,7 @@
             this.label2.BackColor = System.Drawing.SystemColors.ControlLight;
             this.label2.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             this.label2.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.label2.Location = new System.Drawing.Point(23, 46);
+            this.label2.Location = new System.Drawing.Point(10, 45);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(148, 17);
             this.label2.TabIndex = 9;
@@ -165,7 +177,7 @@
             this.label3.BackColor = System.Drawing.SystemColors.ControlLight;
             this.label3.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             this.label3.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.label3.Location = new System.Drawing.Point(63, 74);
+            this.label3.Location = new System.Drawing.Point(50, 73);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(108, 17);
             this.label3.TabIndex = 10;
@@ -174,7 +186,7 @@
             // button3
             // 
             this.button3.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.button3.Location = new System.Drawing.Point(601, 71);
+            this.button3.Location = new System.Drawing.Point(588, 70);
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(27, 23);
             this.button3.TabIndex = 11;
@@ -244,7 +256,7 @@
             this.groupBoxAppMode.Controls.Add(this.radioButton1);
             this.groupBoxAppMode.Controls.Add(this.radioButton2);
             this.groupBoxAppMode.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
-            this.groupBoxAppMode.Location = new System.Drawing.Point(189, 27);
+            this.groupBoxAppMode.Location = new System.Drawing.Point(192, 26);
             this.groupBoxAppMode.Name = "groupBoxAppMode";
             this.groupBoxAppMode.Size = new System.Drawing.Size(418, 51);
             this.groupBoxAppMode.TabIndex = 17;
@@ -385,9 +397,9 @@
             // 
             this.flowLayoutPanel1.Controls.Add(this.groupBox7RInject);
             this.flowLayoutPanel1.Controls.Add(this.groupBoxUEOpt);
-            this.flowLayoutPanel1.Location = new System.Drawing.Point(189, 189);
+            this.flowLayoutPanel1.Location = new System.Drawing.Point(188, 189);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(425, 207);
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(425, 208);
             this.flowLayoutPanel1.TabIndex = 20;
             // 
             // groupBox1
@@ -401,9 +413,9 @@
             this.groupBox1.Controls.Add(this.button2);
             this.groupBox1.Controls.Add(this.textBoxUEInput);
             this.groupBox1.Controls.Add(this.button1);
-            this.groupBox1.Location = new System.Drawing.Point(87, 83);
+            this.groupBox1.Location = new System.Drawing.Point(91, 83);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(636, 100);
+            this.groupBox1.Size = new System.Drawing.Size(619, 100);
             this.groupBox1.TabIndex = 21;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Paths";
@@ -421,13 +433,20 @@
             this.richTextBox1.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
             this.richTextBox1.ForeColor = System.Drawing.SystemColors.HighlightText;
             this.richTextBox1.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.richTextBox1.Location = new System.Drawing.Point(195, 463);
+            this.richTextBox1.Location = new System.Drawing.Point(194, 463);
             this.richTextBox1.Name = "richTextBox1";
             this.richTextBox1.ReadOnly = true;
             this.richTextBox1.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.ForcedVertical;
             this.richTextBox1.Size = new System.Drawing.Size(412, 41);
             this.richTextBox1.TabIndex = 24;
             this.richTextBox1.Text = "";
+            // 
+            // flowLayoutPanel3
+            // 
+            this.flowLayoutPanel3.Location = new System.Drawing.Point(13, 83);
+            this.flowLayoutPanel3.Name = "flowLayoutPanel3";
+            this.flowLayoutPanel3.Size = new System.Drawing.Size(775, 425);
+            this.flowLayoutPanel3.TabIndex = 25;
             // 
             // Form1
             // 
@@ -441,6 +460,7 @@
             this.Controls.Add(this.flowLayoutPanel1);
             this.Controls.Add(this.groupBoxAppMode);
             this.Controls.Add(this.menuStrip1);
+            this.Controls.Add(this.flowLayoutPanel3);
             this.ForeColor = System.Drawing.SystemColors.ControlLightLight;
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "Form1";
@@ -492,10 +512,10 @@
         private FlowLayoutPanel flowLayoutPanel1;
         private GroupBox groupBox1;
         private FlowLayoutPanel flowLayoutPanel2;
-        private RichTextBox resultTextBox;
         private FontDialog fontDialog1;
         private RichTextBox richTextBox1;
         private Label authorlabel4;
         private TextBox authortextBox1;
+        private FlowLayoutPanel flowLayoutPanel3;
     }
 }
