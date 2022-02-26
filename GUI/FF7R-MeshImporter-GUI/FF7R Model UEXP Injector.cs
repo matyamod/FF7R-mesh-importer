@@ -1,5 +1,6 @@
 using FF7R_MeshImporter_GUI.Properties;
 using Microsoft.WindowsAPICodePack.Dialogs;
+using System.Windows.Forms;
 
 namespace FF7R_MeshImporter_GUI
 {
@@ -8,10 +9,17 @@ namespace FF7R_MeshImporter_GUI
         string SetFFDir = Settings.Default.FFInputPath;
         string SetUEDir = Settings.Default.UEInputPath;
         string SetOutDir = Settings.Default.OutputPath;
+        string SetAuth = Settings.Default.Author;
 
         public Form1()
         {
             InitializeComponent();
+            authortextBox1.Text = SetAuth;
+            radioButton1.Checked = true;
+            radioButtonMdInject.Checked = true;
+            textBox7RInput.Text = SetFFDir;
+            textBoxUEInput.Text = SetUEDir;
+            textBoxOutput.Text = SetOutDir;
         }
         //
         //Base mode selection
@@ -20,6 +28,7 @@ namespace FF7R_MeshImporter_GUI
         {
             if (radioButton1.Checked)
             {
+                authortextBox1.Text = Settings.Default.Author;
                 radioButtonMdInject.Checked = true;
                 {
                     foreach (Control ctrl in groupBoxUEOpt.Controls)
@@ -110,7 +119,17 @@ namespace FF7R_MeshImporter_GUI
         //
         //FF7R File Input
 
-        private void textBox1_TextChanged(object sender, EventArgs e)
+        private void textBox7RInput_Enter(object sender, EventArgs e)
+        {
+            textBox7RInput.SelectionStart = textBox7RInput.Text.Length;
+        }
+
+        private void textBox7RInput_Leave(object sender, EventArgs e)
+        {
+            textBox7RInput.SelectionStart = 0;
+        }
+
+        private void textBox7RInput_TextChanged_1(object sender, EventArgs e)
         {
 
         }
@@ -157,7 +176,15 @@ namespace FF7R_MeshImporter_GUI
                 }
                 else
                 {
-                    ffdialog.InitialDirectory = Path.GetDirectoryName(textBox7RInput.Text);
+                    string ffinidir = textBox7RInput.Text;
+                    if (File.Exists(ffinidir))
+                    {
+                        ffdialog.InitialDirectory = Path.GetDirectoryName(textBox7RInput.Text);
+                    }
+                    else
+                    {
+                        ffdialog.InitialDirectory = textBox7RInput.Text;
+                    }
                 }
                 ffdialog.Filter = "UEXP Files|*.uexp";
                 {
@@ -170,7 +197,18 @@ namespace FF7R_MeshImporter_GUI
         }
         //
         //4.18 Input
-        private void textBox2_TextChanged(object sender, EventArgs e)
+
+        private void textBoxUEInput_Enter(object sender, EventArgs e)
+        {
+            textBoxUEInput.SelectionStart = textBoxUEInput.Text.Length;
+        }
+
+        private void textBoxUEInput_Leave(object sender, EventArgs e)
+        {
+            textBoxUEInput.SelectionStart = 0;
+        }
+
+        private void textBoxUEInput_TextChanged_1(object sender, EventArgs e)
         {
 
         }
@@ -217,7 +255,15 @@ namespace FF7R_MeshImporter_GUI
                 }
                 else
                 {
-                    uedialog.InitialDirectory = Path.GetDirectoryName(textBoxUEInput.Text);
+                    string ueinidir = textBoxUEInput.Text;
+                    if (File.Exists(ueinidir))
+                    {
+                        uedialog.InitialDirectory = Path.GetDirectoryName(textBoxUEInput.Text);
+                    }
+                    else
+                    { 
+                        uedialog.InitialDirectory = textBoxUEInput.Text; 
+                    }
                 }
                 uedialog.Filter = "UEXP Files|*.uexp";
                 {
@@ -230,6 +276,22 @@ namespace FF7R_MeshImporter_GUI
         }
         //
         //Output
+
+        private void textBoxOutput_Enter(object sender, EventArgs e)
+        {
+            textBoxOutput.SelectionStart = textBoxOutput.Text.Length;
+        }
+
+        private void textBoxOutput_Leave(object sender, EventArgs e)
+        {
+            textBoxOutput.SelectionStart = 0;
+        }
+
+        private void textBoxOutput_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
         private void button3_Click(object sender, EventArgs e)
         {
             CommonOpenFileDialog outdialog = new CommonOpenFileDialog();
@@ -254,6 +316,7 @@ namespace FF7R_MeshImporter_GUI
             {
                 textBoxOutput.Text = outdialog.FileName;
             }
+
         }
 
         //
@@ -268,6 +331,9 @@ namespace FF7R_MeshImporter_GUI
                 textBoxUEInput.Enabled = false;
                 button2.Enabled = false;
                 checkedListBox7ROpt.Enabled = false;
+                authorlabel4.Enabled = false;
+                authortextBox1.Enabled = false;
+                authortextBox1.Text = "";
             }
             else
             {
@@ -275,6 +341,8 @@ namespace FF7R_MeshImporter_GUI
                 textBoxUEInput.Enabled = true;
                 button2.Enabled = true;
                 checkedListBox7ROpt.Enabled = true;
+                authorlabel4.Enabled = true;
+                authortextBox1.Enabled = true;
             }
         }
 
@@ -286,6 +354,9 @@ namespace FF7R_MeshImporter_GUI
                 textBoxUEInput.Enabled = false;
                 button2.Enabled = false;
                 checkedListBox7ROpt.Enabled = false;
+                authorlabel4.Enabled = false;
+                authortextBox1.Enabled = false;
+                authortextBox1.Text = "";
             }
             else
             {
@@ -293,6 +364,8 @@ namespace FF7R_MeshImporter_GUI
                 textBoxUEInput.Enabled = true;
                 button2.Enabled = true;
                 checkedListBox7ROpt.Enabled = true;
+                authorlabel4.Enabled = true;
+                authortextBox1.Enabled = true;
             }
         }
 
@@ -304,6 +377,9 @@ namespace FF7R_MeshImporter_GUI
                 textBoxUEInput.Enabled = false;
                 button2.Enabled = false;
                 checkedListBox7ROpt.Enabled = false;
+                authorlabel4.Enabled = false;
+                authortextBox1.Enabled = false;
+                authortextBox1.Text = "";
             }
             else
             {
@@ -311,6 +387,8 @@ namespace FF7R_MeshImporter_GUI
                 textBoxUEInput.Enabled = true;
                 button2.Enabled = true;
                 checkedListBox7ROpt.Enabled = true;
+                authorlabel4.Enabled = true;
+                authortextBox1.Enabled = true;
             }
         }
 
@@ -322,6 +400,9 @@ namespace FF7R_MeshImporter_GUI
                 textBoxUEInput.Enabled = true;
                 button2.Enabled = true;
                 checkedListBox7ROpt.Enabled = true;
+                authorlabel4.Enabled = true;
+                authortextBox1.Enabled = true;
+                authortextBox1.Text = Settings.Default.Author;
             }
         }
 
@@ -335,6 +416,8 @@ namespace FF7R_MeshImporter_GUI
 
         private void button4_Click(object sender, EventArgs e)
         {
+            var Resultform = new Resultform();
+            Resultform.Location = Cursor.Position;
             string strFFInput = textBox7RInput.Text;
             string strUEInput = textBoxUEInput.Text;
             string strOutput = textBoxOutput.Text;
@@ -342,6 +425,16 @@ namespace FF7R_MeshImporter_GUI
             string mode = "";
             string only_mesh = "";
             string dont_remove_KDI = "";
+            string authorname = "";
+            if (string.IsNullOrEmpty(authortextBox1.Text))
+            { 
+            authorname = ""; 
+            }
+            else
+            { 
+            authorname = "--author=" + authortextBox1.Text;
+            }
+
 
             //check if main.exe exists
             string strApp = "./src/main.exe";
@@ -387,8 +480,28 @@ namespace FF7R_MeshImporter_GUI
                 }
                 string strCmdText = "/c " + strApp + " "
     + "\"" + strFFInput + "\"" + " " + "\"" + strUEInput + "\"" + " " + "\"" + strOutput + "\"" + " --mode=" + mode + " "
-    + only_mesh + " " + dont_remove_KDI + " --verbose";
-                System.Diagnostics.Process.Start("CMD.exe", strCmdText);
+    + only_mesh + " " + dont_remove_KDI + authorname + " --verbose";
+
+                System.Diagnostics.ProcessStartInfo procStartInfo =
+                new System.Diagnostics.ProcessStartInfo("cmd", strCmdText);
+                procStartInfo.RedirectStandardOutput = true;
+                procStartInfo.UseShellExecute = false;
+                System.Diagnostics.Process proc = new System.Diagnostics.Process();
+                proc.StartInfo = procStartInfo;
+                proc.Start();
+                Resultform.Show();
+                Resultform.Refresh();
+                string pre_line = "";
+                string line = "";
+                while ((line = proc.StandardOutput.ReadLine()) != null)
+                {
+                    Console.WriteLine(line);
+                    pre_line = line;
+                }
+                proc.WaitForExit();
+                Resultform.Close();
+                proc.Close();
+                richTextBox1.Text = pre_line;
             }
             else if (radioButton2.Checked) //UE4.18
             {
@@ -405,7 +518,26 @@ namespace FF7R_MeshImporter_GUI
                 string strCmdText = "/c " + strApp + " "
     + "\"" + strUEInput + "\"" + " " + "\"" + strOutput + "\"" + " --mode=" + mode + " "
     + only_mesh + " " + dont_remove_KDI + " --verbose";
-                System.Diagnostics.Process.Start("CMD.exe", strCmdText);
+                System.Diagnostics.ProcessStartInfo procStartInfo =
+                new System.Diagnostics.ProcessStartInfo("cmd", strCmdText);
+                procStartInfo.RedirectStandardOutput = true;
+                procStartInfo.UseShellExecute = false;
+                System.Diagnostics.Process proc = new System.Diagnostics.Process();
+                proc.StartInfo = procStartInfo;
+                proc.Start();
+                Resultform.Show();
+                Resultform.Refresh();
+                string pre_line = "";
+                string line = "";
+                while ((line = proc.StandardOutput.ReadLine()) != null)
+                {
+                    Console.WriteLine(line);
+                    pre_line = line;
+                }
+                proc.WaitForExit();
+                Resultform.Close();
+                proc.Close();
+                richTextBox1.Text = pre_line;
 
             }
             
@@ -420,7 +552,8 @@ namespace FF7R_MeshImporter_GUI
         {
             Settings.Default.FFInputPath = Path.GetDirectoryName(textBox7RInput.Text);
             Settings.Default.UEInputPath = Path.GetDirectoryName(textBoxUEInput.Text);
-            Settings.Default.OutputPath = Path.GetDirectoryName(textBoxOutput.Text);
+            Settings.Default.OutputPath = textBoxOutput.Text;
+            Settings.Default.Author = authortextBox1.Text;
             Settings.Default.Save();
         }
 
@@ -429,5 +562,7 @@ namespace FF7R_MeshImporter_GUI
             AboutBox1 a = new AboutBox1();
             a.Show();
         }
+
+
     }
 }

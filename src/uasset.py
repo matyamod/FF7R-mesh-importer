@@ -71,9 +71,9 @@ class UassetHeader:
         self.unk3=f.read(4)
         read_null(f, 'Parse Failed.')
         self.padding_offset = read_uint32(f)
-        self.unk4=f.read(4)
+        self.file_length=read_uint32(f)
         read_null_array(f, 3, 'Parse Failed.')
-        self.unk5=f.read(4)
+        self.unk4=f.read(4)
         self.file_data_offset = read_uint32(f)
 
     def read(f):
@@ -102,9 +102,9 @@ class UassetHeader:
         f.write(header.unk3)
         write_null(f)
         write_uint32(f, header.padding_offset)
-        f.write(header.unk4)
+        write_uint32(f, header.file_length)
         write_null_array(f, 3)
-        f.write(header.unk5)
+        f.write(header.unk4)
         write_uint32(f, header.file_data_offset)
 
 
@@ -120,6 +120,7 @@ class UassetHeader:
         logger.log('  import directory offset: {}'.format(self.import_offset))
         logger.log('  guid hash: {}'.format(self.guid_hash))
         logger.log('  padding offset: {}'.format(self.padding_offset))
+        logger.log('  file length (uasset+uexp-4): {}'.format(self.file_length))
         logger.log('  file data offset: {}'.format(self.file_data_offset))
 
 class UassetImport: #28 bytes
@@ -129,6 +130,7 @@ class UassetImport: #28 bytes
         self.bin2=f.read(8)
         self.name_id=read_uint32(f)
         self.bin3=f.read(4)
+        self.material=False
 
     def read(f):
         return UassetImport(f)
@@ -141,16 +143,20 @@ class UassetImport: #28 bytes
         f.write(import_.bin3)
 
     def name_imports(imports, name_list):
-        material_name_id_list=[]
+        material_name_list=[]
         ff7r=False
+        skeletal=False
         for import_ in imports:
             import_.name=name_list[import_.name_id]
             import_.class_name=name_list[import_.class_id]
-            if import_.class_name=='Material':
-                material_name_id_list.append(import_.name_id)
+            if import_.class_name in ['Material', 'MaterialInstanceConstant']:
+                import_.material=True
             if import_.class_name=='MaterialInstanceConstant':
                 ff7r=True
-        return material_name_id_list, ff7r
+            if import_.class_name=='SkeletalMesh':
+                skeletal=True
+            
+        return ff7r, skeletal
 
     def print(self, padding=2):
         pad=' '*padding
@@ -158,8 +164,8 @@ class UassetImport: #28 bytes
         logger.log(pad+'  class: '+self.class_name)
 
 class UassetExport: #104 bytes
-    KNOWN_EXPORTS=['EndEmissiveColorUserData', 'SQEX_BonamikAssetUserData', 'SQEX_KineDriver_AssetUserData', 'SkelMeshBoneAttributeRedirectorUserData']
-    IGNORE=[True, True, True, True]
+    KNOWN_EXPORTS=['EndEmissiveColorUserData', 'SQEX_BonamikAssetUserData', 'SQEX_KineDriver_AssetUserData', 'SkelMeshBoneAttributeRedirectorUserData', 'BodySetup']
+    IGNORE=[True, True, True, True, True]
     #'BodySetup'
     def __init__(self, f):
         self.bin1=f.read(16)
@@ -218,7 +224,7 @@ class Uasset:
 
     def __init__(self, uasset_file):
         if uasset_file[-7:]!='.uasset':
-            logger.error('File extension error (not .uasset)')
+            logger.error('Not .uasset. ({})'.format(uasset_file))
 
         logger.log('Loading '+uasset_file+'...', ignore_verbose=True)
 
@@ -245,7 +251,7 @@ class Uasset:
         self.bin2=f.read(self.header.import_offset-offset)
 
         self.imports=read_array(f, UassetImport.read, len=self.header.import_num)
-        self.material_name_id_list, self.ff7r=UassetImport.name_imports(self.imports, self.name_list)
+        self.ff7r, self.skeletal=UassetImport.name_imports(self.imports, self.name_list)
         logger.log('Import')
         for import_ in self.imports:
             import_.print()
@@ -262,8 +268,9 @@ class Uasset:
         self.bin4=f.read()
         f.close()
     
-    def save(self, file):
-        logger.log('Saving '+file+'...')
+    def save(self, file, uexp_size):
+        self.header.file_length=uexp_size+self.size-4
+        logger.log('Saving '+file+'...', ignore_verbose=True)
         with open(file, 'wb') as f:
             UassetHeader.write(f, self.header)
             f.write(self.bin1)

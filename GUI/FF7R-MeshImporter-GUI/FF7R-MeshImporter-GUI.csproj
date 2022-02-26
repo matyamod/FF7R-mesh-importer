@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
     <RootNamespace>FF7R_MeshImporter_GUI</RootNamespace>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
@@ -15,6 +14,9 @@
     <Description>FF7R Model UEXP Injector</Description>
     <Copyright>(c) 2022</Copyright>
     <DeployExtension Condition="'$(GITHUB_ACTIONS)' != ''">False</DeployExtension>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFrameworks />
   </PropertyGroup>
 
   <ItemGroup>
