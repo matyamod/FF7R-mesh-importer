@@ -164,8 +164,11 @@ class UassetImport: #28 bytes
         logger.log(pad+'  class: '+self.class_name)
 
 class UassetExport: #104 bytes
-    KNOWN_EXPORTS=['EndEmissiveColorUserData', 'SQEX_BonamikAssetUserData', 'SQEX_KineDriver_AssetUserData', 'SkelMeshBoneAttributeRedirectorUserData', 'BodySetup']
-    IGNORE=[True, True, True, True, True]
+    KNOWN_EXPORTS=['EndEmissiveColorUserData', 'SQEX_BonamikAssetUserData', \
+        'SQEX_KineDriver_AssetUserData', 'SkelMeshBoneAttributeRedirectorUserData', \
+        'BodySetup', 'SkelMeshBoneAttributeFilterUserData', \
+        'EndPhysicalConstraintUserData']
+    IGNORE=[True, True, True, True, True, True, True]
     #'BodySetup'
     def __init__(self, f):
         self.bin1=f.read(16)
