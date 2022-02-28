@@ -1,11 +1,8 @@
 import random
 from logger import logger
 class Cipher:
-    #Block chained XOR cipher + fake data
+    #Block chained XOR cipher
     KEY=list('F-JaNcRfUjXn2r5u8x/A?D(G+KbPeSgV'.encode())
-
-    def random_bin():
-        return random.randint(0,255).to_bytes(1, 'big')
     
     def encrypt(str):
         if len(str)==0:
