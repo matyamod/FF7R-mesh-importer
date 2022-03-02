@@ -38,7 +38,7 @@ class Material:
         num = min(len(materials1), len(materials2))
         for m1, m2 in zip(materials1[:num], materials2[:num]):
             if m1.import_name!=m2.import_name:
-                logger.error('Material names do not match. The appearance of the mesh will go wrong. ({}, {})'.format(m1.import_name, m2.import_name))
+                logger.error('Material names do not match. The appearance of the mesh will be wrong. ({}, {})'.format(m1.import_name, m2.import_name))
 
 class SkeletalMesh:
     #unk: ?
@@ -118,7 +118,10 @@ class SkeletalMesh:
         if num<=1:
             logger.log('Nothing has been removed.'.format(num-1), ignore_verbose=True)
             return
+
         self.LODs=[self.LODs[0]]
+        #self.LODs=self.LODs[3:]
+
         logger.log('LOD1~{} have been removed.'.format(num-1), ignore_verbose=True)
 
     def import_LODs(self, skeletalmesh, only_mesh=False, dont_remove_KDI=False):
