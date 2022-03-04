@@ -87,8 +87,10 @@ if __name__=='__main__':
     author=args.author
 
     logger.set_verbose(verbose)
-    if ff7r_file=='':
+    if ff7r_file=='' or os.path.isdir(ff7r_file):
         logger.error('Specify uexp file.')
+    if os.path.dirname(ff7r_file)==save_folder:
+        logger.error('Save folder must be different from the original asset folder.')
     if save_folder!='':
         mkdir(save_folder)
     

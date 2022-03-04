@@ -41,38 +41,16 @@ Download `FF7R-MeshImporter*.zip` from [here](https://github.com/matyalatte/FF7R
 - Thanks to Jordan Tucker for the data map.
 - Thanks to JujuB and Amiibolad for the testing.
 
-## Script Usage
-
-```
-#for non-Python users
-main.exe ff7r_file [ue4_18_file] save_folder [--mode=mode] [options]
-
-#for Python users
-python main.py ff7r_file [ue4_18_file] save_folder [--mode=mode] [options]
-```
-
-- `ff7r_file`: .uexp file extracted from FF7R
-- `ue4_18_file`: .uexp file exported from UE4.18
-- `save_folder`: New uasset files will be generated here.
-- `mode`: The following modes are available.
-   - `import`: Imports LODs and bones. Default mode. This mode has some bugs. Please use with `--only_mesh` option.
-   - `dumpBuffers`: Dumps buffers LODs have.
-   - `valid`: Checks if the script can parse or not.
-- `--verbose`: Shows log.
-- `--only_mesh`: Does not import bones.
-- `--dont_remove_KDI`: Does not remove KDI buffers.
-- `--author=*`: Embeds your name into uassets. You can check the author name with valid mode.
+## Command Line Usage
+You can use our tool with the Command-line.<br>
+See here for the details.<br>
+[Command Line Usage · matyalatte/FF7R-mesh-importer Wiki](https://github.com/matyalatte/FF7R-mesh-importer/wiki/Command-Line-Usage)
 
 ## How to Build
 You can build our tool with Github Actions.<br>
-See [How-to-build.md](How-to-build.md) for the details.<br>
+See here for the details.<br>
+[How to Build with Github Actions · matyalatte/FF7R-mesh-importer Wiki](https://github.com/matyalatte/FF7R-mesh-importer/wiki/How-to-Build-with-Github-Actions)
 
-## Q&A
+## FAQ
+[FAQ · matyalatte/FF7R-mesh-importer Wiki](https://github.com/matyalatte/FF7R-mesh-importer/wiki/FAQ)
 
-### Is the .exe file malware? My antivirus reports it as containing virus.
-No, it is a false positive caused by pyinstaller.<br>
-<br>
-[AVG (and other antiviruses) reports exe file as containing virus · Issue #603 · pyinstaller/pyinstaller](https://github.com/pyinstaller/pyinstaller/issues/603)<br>
-<br>
-I recompiled the bootloader of pyinstaller to reduce false positives, but it will not completely solve the issue.<br>
-<br>
