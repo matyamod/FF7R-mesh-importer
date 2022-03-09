@@ -30,12 +30,31 @@ class Material:
         logger.log(pad+self.import_name)
         logger.log(pad+'  name: {}'.format(self.name))
 
-    def compare_names(materials1, materials2, ignore_material_names=False):
+    def check_confliction(materials1, materials2, ignore_material_names=False):
+        if len(materials1)<len(materials2):
+            logger.error('Materials are too much. You can not import the mesh.')
+
+        def get_range(num):
+            return [i for i in range(num)]
+
+        new_material_ids = get_range(len(materials2))
+        
         if ignore_material_names:
-            if len(materials1)<len(materials2):
-                logger.error('Materials are too much. You can not import the mesh.')
-            return
-        num = min(len(materials1), len(materials2))
-        for m1, m2 in zip(materials1[:num], materials2[:num]):
-            if m1.import_name!=m2.import_name:
-                logger.error('Material names do not match. The appearance of the mesh will be wrong. ({}, {})'.format(m1.import_name, m2.import_name))
+            return new_material_ids
+
+
+        for mat2, i in zip(materials2, get_range(len(materials2))):
+            found=False
+            for mat1, j in zip(materials1, get_range(len(materials1))):
+                print(mat1.import_name)
+                if mat1.import_name==mat2.import_name:
+                    new_material_ids[i]=j
+                    found=True
+                if found:
+                    break
+            if not found:
+                logger.error('Unknown material name has been detected. ({}) You can not import the mesh. or use "--ignore_material_names".'.format(mat2.import_name))
+
+        if new_material_ids!=get_range(len(materials2)):
+            logger.log('Material name conflicts detected. But it has been resolved correctly.')
+        return new_material_ids

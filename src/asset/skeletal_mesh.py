@@ -102,19 +102,20 @@ class SkeletalMesh:
                 msg+=' Maybe UE4 added an extra bone as a root bone.'
             logger.error(msg)
 
-        Material.compare_names(self.materials, skeletalmesh.materials, ignore_material_names=ignore_material_names)
-        
         if not only_mesh:
             self.skeleton.import_bones(skeletalmesh.skeleton.bones, only_phy_bones=only_phy_bones)
-            
 
+        new_material_ids = Material.check_confliction(self.materials, skeletalmesh.materials, ignore_material_names=ignore_material_names)
+        
         LOD_num_self=len(self.LODs)
         LOD_num=min(LOD_num_self, len(skeletalmesh.LODs))
         if LOD_num<LOD_num_self:
             self.LODs=self.LODs[:LOD_num]
             logger.log('LOD{}~{} have been removed.'.format(LOD_num, LOD_num_self-1), ignore_verbose=True)
         for i in range(LOD_num):
-            self.LODs[i].import_LOD(skeletalmesh.LODs[i], str(i))
+            new_lod = skeletalmesh.LODs[i]
+            new_lod.update_material_ids(new_material_ids)
+            self.LODs[i].import_LOD(new_lod, str(i))
 
         if not dont_remove_KDI:
             self.remove_KDI()

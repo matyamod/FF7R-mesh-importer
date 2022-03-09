@@ -94,6 +94,9 @@ class LODSection:
         self.max_bone_influences=section.max_bone_influences
         self.unk=section.unk
 
+    def update_material_ids(self, new_material_ids):
+        self.material_id=new_material_ids[self.material_id]
+
     def remove_KDI(self):
         self.unk1=0
         self.unk2=[]
@@ -553,3 +556,7 @@ class LOD:
 
         for v in self.vertices:
             v.lower_buffer()
+
+    def update_material_ids(self, new_material_ids):
+        for section in self.sections:
+            section.update_material_ids(new_material_ids)
