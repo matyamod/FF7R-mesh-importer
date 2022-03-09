@@ -1,7 +1,5 @@
-
-from io_util import *
-from logger import logger
-
+from util.io_util import *
+from util.logger import logger
 '''
 FILE HEADER
   byte {4}       - Unreal Header (193,131,42,158)
@@ -143,7 +141,7 @@ class UassetImport: #28 bytes
         f.write(import_.bin3)
 
     def name_imports(imports, name_list):
-        material_name_list=[]
+        has_material=False
         ff7r=False
         skeletal=False
         for import_ in imports:
@@ -151,11 +149,14 @@ class UassetImport: #28 bytes
             import_.class_name=name_list[import_.class_id]
             if import_.class_name in ['Material', 'MaterialInstanceConstant']:
                 import_.material=True
+                has_material=True
             if import_.class_name=='MaterialInstanceConstant':
                 ff7r=True
             if import_.class_name=='SkeletalMesh':
                 skeletal=True
-            
+
+        if not has_material:
+            logger.error('Material slot is empty. Be sure materials are assigned correctly in UE4.')
         return ff7r, skeletal
 
     def print(self, padding=2):
@@ -167,8 +168,8 @@ class UassetExport: #104 bytes
     KNOWN_EXPORTS=['EndEmissiveColorUserData', 'SQEX_BonamikAssetUserData', \
         'SQEX_KineDriver_AssetUserData', 'SkelMeshBoneAttributeRedirectorUserData', \
         'BodySetup', 'SkelMeshBoneAttributeFilterUserData', \
-        'EndPhysicalConstraintUserData']
-    IGNORE=[True, True, True, True, True, True, True]
+        'EndPhysicalConstraintUserData', 'NavCollision']
+    IGNORE=[True, True, True, True, True, True, True, True]
     #'BodySetup'
     def __init__(self, f):
         self.bin1=f.read(16)

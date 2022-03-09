@@ -1,7 +1,7 @@
 import os, argparse
-from io_util import *
-from uexp import MeshUexp
-from logger import Timer, logger
+from util.io_util import *
+from util.logger import Timer, logger
+from asset.uexp import MeshUexp
 
 def get_args():
     parser = argparse.ArgumentParser()

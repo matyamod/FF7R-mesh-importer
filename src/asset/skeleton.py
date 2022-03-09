@@ -1,5 +1,5 @@
-from io_util import *
-from logger import logger
+from util.io_util import *
+from util.logger import logger
 
 class Bone:
     #name_id: id of name list

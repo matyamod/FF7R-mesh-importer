@@ -1,5 +1,5 @@
 import os, struct
-from logger import logger
+from util.logger import logger
 
 def mkdir(dir):
     os.makedirs(dir, exist_ok=True)

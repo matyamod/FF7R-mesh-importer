@@ -1,5 +1,3 @@
-import random
-from logger import logger
 class Cipher:
     #Block chained XOR cipher
     KEY=list('F-JaNcRfUjXn2r5u8x/A?D(G+KbPeSgV'.encode())

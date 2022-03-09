@@ -1,5 +1,6 @@
-from io_util import *
-from logger import logger
+from util.io_util import *
+from util.logger import logger
+
 class Material:
     def __init__(self, import_id, name_id, bin):
         self.import_id=import_id
@@ -17,8 +18,8 @@ class Material:
         write_uint32(f, material.name_id)
         f.write(material.bin)
 
-    def print_materials(materials, name_list, imports):
-        logger.log('Materials')
+    def print_materials(materials, name_list, imports, offset):
+        logger.log('Materials (offset: {})'.format(offset))
         for material in materials:
             material.name=name_list[material.name_id]
             material.import_name=imports[-material.import_id-1].name
@@ -26,6 +27,11 @@ class Material:
 
     def print(self, padding=2):
         pad=' '*padding
-        logger.log(pad+'import_name: {}'.format(self.import_name))
-        logger.log(pad+'name: {}'.format(self.name))
-        
+        logger.log(pad+self.import_name)
+        logger.log(pad+'  name: {}'.format(self.name))
+
+    def compare_names(materials1, materials2):
+        num = min(len(materials1), len(materials2))
+        for m1, m2 in zip(materials1[:num], materials2[:num]):
+            if m1.import_name!=m2.import_name:
+                logger.error('Material names do not match. The appearance of the mesh will be wrong. ({}, {})'.format(m1.import_name, m2.import_name))
