@@ -102,12 +102,15 @@ class MeshUexp:
         else:
             logger.error('Unsupported method for static mesh')
 
-    def import_LODs(self, mesh_uexp, only_mesh=False, dont_remove_KDI=False):
+    def import_LODs(self, mesh_uexp, only_mesh=False, only_phy_bones=False,
+                    dont_remove_KDI=False, ignore_material_names=False):
         if not mesh_uexp.skeletal:
             logger.error('You can\'t import static mesh into skeletal mesh.')
 
         if self.skeletal:
-            self.skeletalmesh.import_LODs(mesh_uexp.skeletalmesh, only_mesh=only_mesh, dont_remove_KDI=dont_remove_KDI)
+            self.skeletalmesh.import_LODs(mesh_uexp.skeletalmesh, only_mesh=only_mesh,
+                                          only_phy_bones=only_phy_bones, dont_remove_KDI=dont_remove_KDI,
+                                          ignore_material_names=ignore_material_names)
         else:
             logger.error('Unsupported method for static mesh')
 

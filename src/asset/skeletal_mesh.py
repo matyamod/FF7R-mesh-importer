@@ -90,18 +90,23 @@ class SkeletalMesh:
 
         logger.log('LOD1~{} have been removed.'.format(num-1), ignore_verbose=True)
 
-    def import_LODs(self, skeletalmesh, only_mesh=False, dont_remove_KDI=False):
+    def import_LODs(self, skeletalmesh, only_mesh=False, only_phy_bones=False,
+                    dont_remove_KDI=False, ignore_material_names=False):
         if not self.ff7r:
             logger.error("The file should be an FF7R's asset!")
 
-        if len(self.skeleton.bones)!=len(skeletalmesh.skeleton.bones):
-            logger.error('Skeletons are not the same.')
+        bone_diff=len(self.skeleton.bones)-len(skeletalmesh.skeleton.bones)
+        if bone_diff!=0:
+            msg = 'Skeletons are not the same.'
+            if bone_diff==-1:
+                msg+=' Maybe UE4 added an extra bone as a root bone.'
+            logger.error(msg)
 
-        Material.compare_names(self.materials, skeletalmesh.materials)
+        Material.compare_names(self.materials, skeletalmesh.materials, ignore_material_names=ignore_material_names)
         
         if not only_mesh:
-            self.skeleton.import_bones(skeletalmesh.skeleton.bones)
-            logger.log('Bone positions and rotations have been imported.', ignore_verbose=True)
+            self.skeleton.import_bones(skeletalmesh.skeleton.bones, only_phy_bones=only_phy_bones)
+            
 
         LOD_num_self=len(self.LODs)
         LOD_num=min(LOD_num_self, len(skeletalmesh.LODs))

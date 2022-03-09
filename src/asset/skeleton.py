@@ -91,12 +91,21 @@ class Skeleton:
     def name_bones(self, name_list):
         Bone.name_bones(self.bones, name_list)
 
-    def import_bones(self, bones):
+    def import_bones(self, bones, only_phy_bones=False):
+        bone_list=[]
         for self_bone, new_bone in zip(self.bones, bones):
             #if self_bone.name!=new_bone.name:
             #    logger.error("")
             #print('{} -> {}'.format(self_bone.pos[4:7], new_bone.pos[4:7]))
+            if only_phy_bones and 'Phy' not in self_bone.name:
+                continue
             self_bone.update(new_bone)
+            bone_list.append(self_bone.name)
+        if only_phy_bones:
+            #logger.log('Imported bones: {}'.format(bone_list))
+            logger.log('Phy bones have been imported.', ignore_verbose=True)
+        else:
+            logger.log('Bone positions and rotations have been imported.', ignore_verbose=True)
 
     def print(self, padding=0):
         pad=' '*padding

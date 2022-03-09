@@ -11,16 +11,22 @@ def get_args():
     parser.add_argument('--mode', default='import', type=str, help="'import', 'removeLOD', 'valid', 'removeKDI', or 'dumpBuffers'")
     parser.add_argument('--verbose', action='store_true', help='Shows log.')
     parser.add_argument('--only_mesh', action='store_true', help='Does not import bones.')
+    parser.add_argument('--only_phy_bones', action='store_true', help='Does not import bones except phy bones.')
     parser.add_argument('--dont_remove_KDI', action='store_true', help='Does not remove KDI buffers.')
+    parser.add_argument('--ignore_material_names', action='store_true', help='Does not check material names.')
     parser.add_argument('--author', default='', type=str, help='You can embed a string into uexp.')
+
     args = parser.parse_args()
     return args
 
-def import_mesh(ff7r_file, ue4_18_file, save_folder, only_mesh=False, dont_remove_KDI=False, author=''):
+def import_mesh(ff7r_file, ue4_18_file, save_folder,
+                only_mesh=False, only_phy_bones=False, dont_remove_KDI=False,
+                ignore_material_names=False, author=''):
     file=os.path.basename(ff7r_file)
     trg_mesh=MeshUexp(ff7r_file)
     src_mesh=MeshUexp(ue4_18_file)
-    trg_mesh.import_LODs(src_mesh, only_mesh=only_mesh, dont_remove_KDI=dont_remove_KDI)
+    trg_mesh.import_LODs(src_mesh, only_mesh=only_mesh, only_phy_bones=only_phy_bones,
+                        dont_remove_KDI=dont_remove_KDI, ignore_material_names=ignore_material_names)
     if author!='':
         trg_mesh.embed_string(author)
     new_file=os.path.join(save_folder, file)
@@ -83,8 +89,10 @@ if __name__=='__main__':
     mode=args.mode
     verbose=args.verbose
     only_mesh=args.only_mesh
+    only_phy_bones = args.only_phy_bones
     dont_remove_KDI=args.dont_remove_KDI
     author=args.author
+    ignore_material_names = args.ignore_material_names
 
     logger.set_verbose(verbose)
     if ff7r_file=='' or os.path.isdir(ff7r_file):
@@ -96,7 +104,9 @@ if __name__=='__main__':
     
     logger.log('mode: '+mode)
     if mode=='import':
-        msg = import_mesh(ff7r_file, ue4_18_file, save_folder, only_mesh=only_mesh, dont_remove_KDI=dont_remove_KDI, author=author)
+        msg = import_mesh(ff7r_file, ue4_18_file, save_folder, only_mesh=only_mesh,
+                         only_phy_bones=only_phy_bones, dont_remove_KDI=dont_remove_KDI,
+                         author=author, ignore_material_names=ignore_material_names)
     elif mode=='removeLOD':
         msg = remove_LOD(ff7r_file, save_folder)
     elif mode=='valid':

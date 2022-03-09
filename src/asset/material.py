@@ -30,7 +30,11 @@ class Material:
         logger.log(pad+self.import_name)
         logger.log(pad+'  name: {}'.format(self.name))
 
-    def compare_names(materials1, materials2):
+    def compare_names(materials1, materials2, ignore_material_names=False):
+        if ignore_material_names:
+            if len(materials1)<len(materials2):
+                logger.error('Materials are too much. You can not import the mesh.')
+            return
         num = min(len(materials1), len(materials2))
         for m1, m2 in zip(materials1[:num], materials2[:num]):
             if m1.import_name!=m2.import_name:
