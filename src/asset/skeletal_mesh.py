@@ -1,44 +1,10 @@
 import os, json
-from io_util import *
-from logger import logger
+from util.io_util import *
+from util.logger import logger
 
-from mesh import LOD, PhysicalMesh
-from skeleton import Skeleton
-
-class Material:
-    def __init__(self, import_id, name_id, bin):
-        self.import_id=import_id
-        self.name_id=name_id
-        self.bin=bin
-    
-    def read(f):
-        import_id=read_int32(f)
-        name_id=read_uint32(f)
-        bin=f.read(28)
-        return Material(import_id, name_id, bin)
-
-    def write(f, material):
-        write_int32(f, material.import_id)
-        write_uint32(f, material.name_id)
-        f.write(material.bin)
-
-    def print_materials(materials, name_list, imports, offset):
-        logger.log('Materials (offset: {})'.format(offset))
-        for material in materials:
-            material.name=name_list[material.name_id]
-            material.import_name=imports[-material.import_id-1].name
-            material.print()
-
-    def print(self, padding=2):
-        pad=' '*padding
-        logger.log(pad+self.import_name)
-        logger.log(pad+'  name: {}'.format(self.name))
-
-    def compare_names(materials1, materials2):
-        num = min(len(materials1), len(materials2))
-        for m1, m2 in zip(materials1[:num], materials2[:num]):
-            if m1.import_name!=m2.import_name:
-                logger.error('Material names do not match. The appearance of the mesh will be wrong. ({}, {})'.format(m1.import_name, m2.import_name))
+from asset.lod import LOD, Face
+from asset.skeleton import Skeleton
+from asset.material import Material
 
 class SkeletalMesh:
     #unk: ?
@@ -124,26 +90,32 @@ class SkeletalMesh:
 
         logger.log('LOD1~{} have been removed.'.format(num-1), ignore_verbose=True)
 
-    def import_LODs(self, skeletalmesh, only_mesh=False, dont_remove_KDI=False):
+    def import_LODs(self, skeletalmesh, only_mesh=False, only_phy_bones=False,
+                    dont_remove_KDI=False, ignore_material_names=False):
         if not self.ff7r:
             logger.error("The file should be an FF7R's asset!")
 
-        if len(self.skeleton.bones)!=len(skeletalmesh.skeleton.bones):
-            logger.error('Skeletons are not the same.')
+        bone_diff=len(self.skeleton.bones)-len(skeletalmesh.skeleton.bones)
+        if bone_diff!=0:
+            msg = 'Skeletons are not the same.'
+            if bone_diff==-1:
+                msg+=' Maybe UE4 added an extra bone as a root bone.'
+            logger.error(msg)
 
-        Material.compare_names(self.materials, skeletalmesh.materials)
-        
         if not only_mesh:
-            self.skeleton.import_bones(skeletalmesh.skeleton.bones)
-            logger.log('Bone positions and rotations have been imported.', ignore_verbose=True)
+            self.skeleton.import_bones(skeletalmesh.skeleton.bones, only_phy_bones=only_phy_bones)
 
+        new_material_ids = Material.check_confliction(self.materials, skeletalmesh.materials, ignore_material_names=ignore_material_names)
+        
         LOD_num_self=len(self.LODs)
         LOD_num=min(LOD_num_self, len(skeletalmesh.LODs))
         if LOD_num<LOD_num_self:
             self.LODs=self.LODs[:LOD_num]
             logger.log('LOD{}~{} have been removed.'.format(LOD_num, LOD_num_self-1), ignore_verbose=True)
         for i in range(LOD_num):
-            self.LODs[i].import_LOD(skeletalmesh.LODs[i], str(i))
+            new_lod = skeletalmesh.LODs[i]
+            new_lod.update_material_ids(new_material_ids)
+            self.LODs[i].import_LOD(new_lod, str(i))
 
         if not dont_remove_KDI:
             self.remove_KDI()
@@ -190,5 +162,57 @@ class SkeletalMesh:
     def get_metadata(self):
         return self.LODs[0].get_metadata()
     '''
+
+class PhysicalMesh: #collider or something? low poly mesh.
+    #vertices
+    #bone_id: vertex group? each vertex has a bone id.
+    #faces
+
+    def __init__(self, f):
+        self.offset=f.tell()
+        vertex_num=read_uint32(f)
+        self.vb=f.read(vertex_num*12)
+        #self.vertices=read_vec3_f32_array(f)
+        #vertex_num=len(self.vertices)
+        
+        num = read_uint32(f)
+        check(num, vertex_num, f, 'Parse failed! (StaticMesh:vertex_num)')
+        
+        self.weight_buffer=f.read(num*12)
+        '''
+        self.bone_id=[]
+        self.weight=[]
+        for i in range(num):
+            bone_id=read_uint16_array(f, len=4)
+            self.bone_id.append(bone_id)
+            weight=read_uint8_array(f, len=4)
+            self.weight.append(weight)
+        '''
+
+        face_num=read_uint32(f)
+        self.faces=Face.read_array(f, len=face_num)
+
+    def read(f):
+        return PhysicalMesh(f)
+
+    def write(f, mesh):
+        write_uint32(f, len(mesh.vb)//12)
+        f.write(mesh.vb)
+        #write_vec3_f32_array(f, mesh.vertices, with_length=True)
+        write_uint32(f, len(mesh.weight_buffer)//12)
+        f.write(mesh.weight_buffer)
+        '''
+        for bone_id, weight in zip(mesh.bone_id, mesh.weight):
+            write_uint16_array(f, bone_id)
+            write_uint8_array(f, weight)
+        '''
+        write_uint32(f, len(mesh.faces)//6)
+        Face.write_array(f, mesh.faces)
+
+    def print(self, padding=0):
+        pad=' '*padding
+        logger.log(pad+'Mesh (offset: {})'.format(self.offset))
+        logger.log(pad+'  vertex_num: {}'.format(len(self.vb)//12))
+        logger.log(pad+'  face_num: {}'.format(len(self.faces)))
 
         
