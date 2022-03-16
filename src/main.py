@@ -56,9 +56,10 @@ def valid(ff7r_file, save_folder):
         msg='Valid!'+' Author: {},'.format(author)*(author!='')
 
     except Exception as e:
-        os.remove(new_file)
-        os.remove(new_file[:-4]+'uasset')
-        msg='Invalid. '+e
+        #os.remove(new_file)
+        #os.remove(new_file[:-4]+'uasset')
+        msg='Invalid. {}'.format(e)
+        return msg
     os.remove(new_file)
     os.remove(new_file[:-4]+'uasset')
     return msg

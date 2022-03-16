@@ -172,7 +172,8 @@ class UassetExport: #104 bytes
     IGNORE=[True, True, True, True, True, True, True, True]
     #'BodySetup'
     def __init__(self, f):
-        self.bin1=f.read(16)
+        self.import_id = -read_int32(f)-1
+        self.bin1=f.read(12)
         self.name_id=read_uint32(f)
         self.bin2=f.read(8)
         self.size=read_uint32(f)
@@ -184,6 +185,7 @@ class UassetExport: #104 bytes
         return UassetExport(f)
     
     def write(f, export):
+        write_int32(f, -export.import_id-1)
         f.write(export.bin1)
         write_uint32(f, export.name_id)
         f.write(export.bin2)
@@ -196,18 +198,19 @@ class UassetExport: #104 bytes
         self.size=size
         self.offset=offset
 
-    def name_exports(exports, name_list, file_name):
+    def name_exports(exports, imports, name_list, file_name):
         for export in exports:
             name=name_list[export.name_id]
+            export.import_name = imports[export.import_id].name
 
             if name in UassetExport.KNOWN_EXPORTS:
                 export.id=UassetExport.KNOWN_EXPORTS.index(name)
                 export.ignore=UassetExport.IGNORE[export.id]
-            elif name in file_name:
+            elif export.import_name in ['SkeletalMesh', 'StaticMesh']:
                 export.id=-1
                 export.ignore=False
             else:
-                logger.error('Unsupported assets. ({})'.format(name))
+                logger.error('Unsupported exports. (export: {}, file: {})'.format(name, file_name))
 
             export.name=name
 
@@ -220,6 +223,7 @@ class UassetExport: #104 bytes
     def print(self, padding=2):
         pad=' '*padding
         logger.log(pad+self.name)
+        logger.log(pad+'  class: {}'.format(self.import_name))
         logger.log(pad+'  size: {}'.format(self.size))
         logger.log(pad+'  offset: {}'.format(self.offset))
 
@@ -263,7 +267,7 @@ class Uasset:
         offset=f.tell()
         self.bin3=f.read(self.header.export_offset-offset)
         self.exports=read_array(f, UassetExport.read, len=self.header.export_num)
-        UassetExport.name_exports(self.exports, self.name_list, self.file)
+        UassetExport.name_exports(self.exports, self.imports, self.name_list, self.file)
 
         logger.log('Export')
         for export in self.exports:

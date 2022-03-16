@@ -5,9 +5,7 @@ import os
 from util.io_util import *
 from util.logger import logger
 from util.cipher import Cipher
-from asset.skeletal_mesh import SkeletalMesh
-from asset.static_mesh import StaticMesh
-#from unknown_block import unknown
+from asset.mesh import StaticMesh, SkeletalMesh
 from asset.uasset import Uasset
 
 class MeshUexp:
@@ -52,11 +50,11 @@ class MeshUexp:
                 else:
                     if export.id==-1:
                         if self.skeletal:
-                            self.skeletalmesh=SkeletalMesh.read(f, self.ff7r, self.name_list, self.imports)                        
+                            self.mesh=SkeletalMesh.read(f, self.ff7r, self.name_list, self.imports)
                             self.unknown2=f.read(export.offset+export.size-f.tell()-self.uasset.size)
                         else:
-                            logger.error('Not skeltal mesh.')
-                            self.staticmesh=StaticMesh.read(f, self.ff7r, self.name_list, self.imports)
+                            self.mesh=StaticMesh.read(f, self.ff7r, self.name_list, self.imports)
+                            self.unknown2=f.read(export.offset+export.size-f.tell()-self.uasset.size)
 
             #footer
             offset = f.tell()
@@ -83,48 +81,41 @@ class MeshUexp:
                 else:
                     if export.id==-1:
                         if self.skeletal:
-                            SkeletalMesh.write(f, self.skeletalmesh)
+                            SkeletalMesh.write(f, self.mesh)
                             f.write(self.unknown2)
                         else:
-                            StaticMesh.write(f, self.staticmesh)
+                            StaticMesh.write(f, self.mesh)
+                            f.write(self.unknown2)
                         size=f.tell()-offset
 
                 export.update(size, offset+self.uasset.size)
 
-            f.write(self.meta)
+            if self.skeletal:
+                f.write(self.meta)
             f.write(self.foot)
             uexp_size=f.tell()
         self.uasset.save(file[:-4]+'uasset', uexp_size)
 
     def remove_LODs(self):
-        if self.skeletal:
-            self.skeletalmesh.remove_LODs()
-        else:
-            logger.error('Unsupported method for static mesh')
+        self.mesh.remove_LODs()
 
     def import_LODs(self, mesh_uexp, only_mesh=False, only_phy_bones=False,
                     dont_remove_KDI=False, ignore_material_names=False):
-        if not mesh_uexp.skeletal:
-            logger.error('You can\'t import static mesh into skeletal mesh.')
-
         if self.skeletal:
-            self.skeletalmesh.import_LODs(mesh_uexp.skeletalmesh, only_mesh=only_mesh,
+            self.mesh.import_LODs(mesh_uexp.mesh, only_mesh=only_mesh,
                                           only_phy_bones=only_phy_bones, dont_remove_KDI=dont_remove_KDI,
                                           ignore_material_names=ignore_material_names)
         else:
-            logger.error('Unsupported method for static mesh')
+            self.mesh.import_LODs(mesh_uexp.mesh, ignore_material_names=ignore_material_names)
 
     def remove_KDI(self):
         if self.skeletal:
-            self.skeletalmesh.remove_KDI()
+            self.mesh.remove_KDI()
         else:
             logger.error('Unsupported method for static mesh')
 
     def dump_buffers(self, save_folder):
-        if self.skeletal:
-            self.skeletalmesh.dump_buffers(save_folder)
-        else:
-            logger.error('Unsupported method for static mesh')
+        self.mesh.dump_buffers(save_folder)
 
     def embed_string(self, string):
         self.author=string
