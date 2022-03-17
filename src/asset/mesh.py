@@ -53,22 +53,18 @@ class Mesh:
 
     def seek_materials(f, imports):
         offset=f.tell()
+        buf=f.read(3)
         while (True):
-            if f.tell()-offset>10000:
-                logger.error('Parse failed. Material properties not found. This is an unexpected error.')
-            i=read_uint8(f)
-            if i==255:
-                c+=1
-            else:
-                c=0
-            if c==3:
-                f.seek(-4,1)
-                import_id=-read_int32(f)-1
-                if import_id>=len(imports):
-                    f.seek(4,1)
-                    continue
-                if imports[import_id].material:
-                    break
+            while (buf!=b'\xFF\xFF\xFF'):
+                buf=b''.join([buf[1:], f.read(1)])
+                if f.tell()-offset>10000:
+                    logger.error('Parse failed. Material properties not found. This is an unexpected error.')
+            f.seek(-4,1)
+            import_id=-read_int32(f)-1
+            if imports[import_id].material:
+                break
+            f.seek(4,1)
+            buf=f.read(3)
         return
 
 class StaticMesh(Mesh):
@@ -81,15 +77,17 @@ class StaticMesh(Mesh):
         offset=f.tell()
         Mesh.seek_materials(f, imports)
         f.seek(-10-51*(not ff7r),1)
-
         material_offset=f.tell()
         num = read_uint32(f)
         f.seek((not ff7r)*51, 1)
 
         materials=[]
         for i in range(num):
+            if i>0:
+                Mesh.seek_materials(f, imports)
+                f.seek(-6, 1)
             materials.append(StaticMaterial.read(f))
-            f.seek((not ff7r)*261, 1)
+            
         Material.print_materials(materials, name_list, imports, material_offset)
         
         buf=f.read(6)

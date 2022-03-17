@@ -34,7 +34,8 @@ class Buffer:
 
     def get_meta(self):
         return self.offset, self.stride, self.size
-    
+
+#Index buffer for static mesh
 class StaticIndexBuffer(Buffer):
     def __init__(self, uint32_flag, stride, size, ib, offset, name):
         self.uint32_flag=uint32_flag
@@ -54,6 +55,7 @@ class StaticIndexBuffer(Buffer):
         size = len(self.buf)//stride
         return self.offset, stride, size
 
+#Index buffer for skeletal mesh
 class SkeletalIndexBuffer(Buffer):
     def read(f, name=''):
         stride=read_uint8(f) #2: uint16 id, 4: uint32 id
@@ -65,6 +67,7 @@ class SkeletalIndexBuffer(Buffer):
         write_uint8(f, ib.stride)
         Buffer.write(f, ib)
 
+#Vertex buffer
 class VertexBuffer(Buffer):
     def __init__(self,  stride, size, buf, offset, name):
         self.vertex_num = size

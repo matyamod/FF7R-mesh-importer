@@ -1,3 +1,4 @@
+import re
 from util.io_util import *
 from util.logger import logger
 
@@ -5,11 +6,12 @@ from asset.lod_section import StaticLODSection, SkeletalLODSection
 from asset.buffer import Buffer, VertexBuffer, StaticIndexBuffer, SkeletalIndexBuffer
 
 class LOD:
-    def __init__(self, vb, vb2, ib, ib2):
+    def __init__(self, vb, vb2, ib, ib2, color_vb=None):
         self.vb = vb
         self.vb2 = vb2
         self.ib = ib
         self.ib2 = ib2
+        self.color_vb = color_vb
 
     def import_LOD(self, lod, name=''):
         if len(self.sections)<len(lod.sections):
@@ -24,6 +26,10 @@ class LOD:
         self.vb = lod.vb
         self.vb2 = lod.vb2
         self.ib2 = lod.ib2
+        if self.color_vb is not None:
+            self.color_vb = lod.color_vb
+            if lod.color_vb is None:
+                logger.log('Warning: The original mesh has color VB. But your mesh doesn\'t. I don\'t know if the injection works.')
         self.uv_num = lod.uv_num
         logger.log('LOD{} has been imported.'.format(name))
         logger.log('  faces: {} -> {}'.format(f_num1, f_num2))
@@ -31,20 +37,24 @@ class LOD:
         logger.log('  uv maps: {} -> {}'.format(uv_num1, uv_num2))
 
     def get_buffers(self):
-        return [self.vb, self.vb2, self.ib, self.ib2]
+        buffers = [self.vb, self.vb2, self.ib, self.ib2]
+        if self.color_vb is not None:
+            buffers += [self.color_vb]
+        return buffers
 
     def update_material_ids(self, new_material_ids):
         for section in self.sections:
             section.update_material_ids(new_material_ids)
 
 class StaticLOD(LOD):
-    def __init__(self, offset, sections, vertex_num, uv_num, flags, vb, vb2, ib, ib2, unk):
+    def __init__(self, offset, sections, vertex_num, uv_num, flags, use_float32, vb, vb2, color_vb, ib, ib2, unk):
         self.offset = offset
         self.sections = sections
         self.vertex_num = vertex_num
         self.uv_num = uv_num
         self.flags = flags
-        super().__init__(vb, vb2, ib, ib2)
+        self.use_float32 = use_float32
+        super().__init__(vb, vb2, ib, ib2, color_vb=color_vb)
         self.unk = unk
         self.face_num=0
         for section in self.sections:
@@ -56,31 +66,41 @@ class StaticLOD(LOD):
         check(one, 1, f)
         section_num = read_uint32(f)
         sections = read_array(f, StaticLODSection.read, len=section_num)
-        sections[0].print(0)
 
         flags = f.read(4)
-        print(f.tell())
         stride = read_uint32(f)
         vertex_num = read_uint32(f)
 
         #potition vertex buffer
         vb = VertexBuffer.read(f, name='VB0')
 
-        one = read_uint16(f) #strip flags
+        one = read_uint16(f)
         check(one, 1, f)
 
         #mesh vertex buffer
         uv_num = read_uint32(f)
         stride = read_uint32(f)
-        check(uv_num*4+8, stride)
         read_const_uint32(f, vertex_num)
-        read_null_array(f, 2) #use full precision?
+        use_float32 = read_uint32(f)
+        check(uv_num*(1+use_float32)*4+8, stride, f)
+        read_null(f)
 
         vb2 = VertexBuffer.read(f, name='VB2') #normals+uv_maps? (stride: 8+uv_num*4)
 
-        read_const_uint32(f, 1)
-        null=f.read(6)
-        check(null, b'\x00'*6, f)
+        one = read_uint16(f)
+        check(one, 1, f)
+        null=read_uint16(f)
+        if null!=0: #color vertex buffer
+            f.seek(-2, 1)
+            read_const_uint32(f, 4)
+            read_const_uint32(f, vertex_num)
+            color_vb = VertexBuffer.read(f, name='ColorVB')
+
+        else:
+            color_vb = None
+            null=read_uint16(f)
+            check(null, 0, f)
+            read_null(f)
         ib = StaticIndexBuffer.read(f, name='IB')
         read_null(f)
         read_const_uint32(f, 1)
@@ -90,7 +110,7 @@ class StaticLOD(LOD):
 
         ib2 = StaticIndexBuffer.read(f, name='IB2')
         unk = f.read(48)
-        return StaticLOD(offset, sections, vertex_num, uv_num, flags, vb, vb2, ib, ib2, unk)
+        return StaticLOD(offset, sections, vertex_num, uv_num, flags, use_float32, vb, vb2, color_vb, ib, ib2, unk)
 
     def write(f, lod):
         write_uint16(f, 1)
@@ -102,13 +122,23 @@ class StaticLOD(LOD):
         VertexBuffer.write(f, lod.vb)
         write_uint16(f, 1)
         write_uint32(f, lod.uv_num)
-        stride = 8+4*lod.uv_num
+        stride = 8+lod.uv_num*(1+lod.use_float32)*4
         write_uint32(f, stride)
         write_uint32(f, lod.vertex_num)
-        write_null_array(f, 2)
+        write_uint32(f, lod.use_float32)
+        write_null(f)
         VertexBuffer.write(f, lod.vb2)
-        write_uint32(f, 1)
-        f.write(b'\x00'*6)
+
+        if lod.color_vb is not None:
+            write_uint16(f, 1)
+            write_uint32(f, 4)
+            write_uint32(f, lod.vertex_num)
+            VertexBuffer.write(f, lod.color_vb)
+        else:
+            write_uint32(f, 1)
+            write_uint16(f, 0)
+            write_null(f)
+
         StaticIndexBuffer.write(f, lod.ib)
         write_null(f)
         write_uint32(f, 1)
@@ -203,6 +233,7 @@ class SkeletalLOD(LOD):
             check(self.unknown_vertex_data.size, self.vb.vertex_num)
         else:
             self.unknown_vertex_data=None
+        self.color_vb = None
 
         self.ib2 = SkeletalIndexBuffer.read(f, name='IB2')
 
@@ -319,7 +350,7 @@ class SkeletalLOD(LOD):
     def get_buffers(self):
         buffers = super().get_buffers()
         if self.KDI_buffer_size>0:
-            buffers = buffers + [self.KDI_buffer, self.KDI_VB]
+            buffers += [self.KDI_buffer, self.KDI_VB]
         return buffers
 
     def print(self, name, bones, padding=0):

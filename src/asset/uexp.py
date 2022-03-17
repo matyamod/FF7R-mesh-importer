@@ -29,11 +29,8 @@ class MeshUexp:
         self.imports = self.uasset.imports
         self.ff7r = self.uasset.ff7r
         self.skeletal = self.uasset.skeletal
-        #if not self.skeletal:
-        #    logger.error('Not skeletal mesh. ({})'.format(file))
         logger.log('FF7R: {}'.format(self.ff7r))
 
-        logger.log('')
         logger.log('Loading '+file+'...', ignore_verbose=True)
 
         #open .uexp

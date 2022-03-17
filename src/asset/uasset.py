@@ -144,6 +144,13 @@ class UassetImport: #28 bytes
         has_material=False
         ff7r=False
         skeletal=False
+
+        def in_name_list(s):
+            for name in name_list:
+                if s in name:
+                    return True
+            return False
+
         for import_ in imports:
             import_.name=name_list[import_.name_id]
             import_.class_name=name_list[import_.class_id]
@@ -151,6 +158,8 @@ class UassetImport: #28 bytes
                 import_.material=True
                 has_material=True
             if import_.class_name=='MaterialInstanceConstant':
+                ff7r=True
+            if import_.class_name=='Material' and ('NavCollision' not in name_list):
                 ff7r=True
             if import_.class_name=='SkeletalMesh':
                 skeletal=True

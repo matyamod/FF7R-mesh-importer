@@ -69,8 +69,8 @@ class StaticMaterial(Material):
         f.seek(2, 1)
         import_id=read_int32(f)
         slot_name_id=read_uint32(f)
-        bin=f.read(24)
-        return SkeletalMaterial(import_id, slot_name_id, bin)
+        #bin=f.read(24)
+        return SkeletalMaterial(import_id, slot_name_id, None)
 
     def write(f, material):
         f.write(b'\x00\x07')
