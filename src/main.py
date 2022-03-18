@@ -95,6 +95,8 @@ if __name__=='__main__':
     
     logger.log('mode: '+mode)
     if mode=='import':
+        if ue4_18_file=='' or os.path.isdir(ue4_18_file):
+            logger.error('Specify uexp file.')
         msg = import_mesh(ff7r_file, ue4_18_file, save_folder, args)
     else:
         functions = {'removeLOD': remove_LOD, 'valid': valid, 'dumpBuffers': dump_buffers}
