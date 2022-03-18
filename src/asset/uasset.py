@@ -105,7 +105,6 @@ class UassetHeader:
         f.write(header.unk4)
         write_uint32(f, header.file_data_offset)
 
-
     def print(self):
         logger.log('Header info')
         logger.log('  version: {}'.format(self.version))
@@ -142,14 +141,7 @@ class UassetImport: #28 bytes
 
     def name_imports(imports, name_list):
         has_material=False
-        ff7r=False
         skeletal=False
-
-        def in_name_list(s):
-            for name in name_list:
-                if s in name:
-                    return True
-            return False
 
         for import_ in imports:
             import_.name=name_list[import_.name_id]
@@ -157,12 +149,15 @@ class UassetImport: #28 bytes
             if import_.class_name in ['Material', 'MaterialInstanceConstant']:
                 import_.material=True
                 has_material=True
-            if import_.class_name=='MaterialInstanceConstant':
-                ff7r=True
-            if import_.class_name=='Material' and ('NavCollision' not in name_list):
-                ff7r=True
             if import_.class_name=='SkeletalMesh':
                 skeletal=True
+
+        ff7r=False
+        for import_ in imports:
+            if import_.class_name=='MaterialInstanceConstant':
+                ff7r=True
+            if not skeletal and import_.class_name=='Material' and ('NavCollision' not in name_list):
+                ff7r=True
 
         if not has_material:
             logger.error('Material slot is empty. Be sure materials are assigned correctly in UE4.')

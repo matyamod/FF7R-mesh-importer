@@ -7,6 +7,7 @@ from asset.skeleton import Skeleton
 from asset.material import Material, StaticMaterial, SkeletalMaterial
 from asset.buffer import Buffer
 
+#Base class for mesh
 class Mesh:
     def __init__(self, LODs):
         self.LODs = LODs
@@ -67,6 +68,7 @@ class Mesh:
             buf=f.read(3)
         return
 
+#static mesh
 class StaticMesh(Mesh):
     def __init__(self, unk, materials, LODs):
         self.unk = unk
@@ -106,6 +108,7 @@ class StaticMesh(Mesh):
         f.write(staticmesh.unk)
         write_array(f, staticmesh.LODs, StaticLOD.write, with_length=True)        
 
+#skeletal mesh
 class SkeletalMesh(Mesh):
     #unk: ?
     #materials: material names
@@ -190,7 +193,8 @@ class SkeletalMesh(Mesh):
 
         logger.log("KDI buffers have been removed.")
         
-class PhysicalMesh: #collider or something? low poly mesh.
+#collider or something? low poly mesh.
+class PhysicalMesh:
     #vertices
     #bone_id: vertex group? each vertex has a bone id.
     #faces

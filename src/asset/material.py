@@ -1,6 +1,7 @@
 from util.io_util import *
 from util.logger import logger
 
+#Base class for material
 class Material:
     def __init__(self, import_id, slot_name_id, bin):
         self.import_id=import_id
@@ -52,18 +53,7 @@ class Material:
             logger.log('Material name conflicts detected. But it has been resolved correctly.')
         return new_material_ids
 
-class SkeletalMaterial(Material):
-    def read(f):
-        import_id=read_int32(f)
-        slot_name_id=read_uint32(f)
-        bin=f.read(28)
-        return SkeletalMaterial(import_id, slot_name_id, bin)
-
-    def write(f, material):
-        write_int32(f, material.import_id)
-        write_uint32(f, material.slot_name_id)
-        f.write(material.bin)
-
+#material for static mesh
 class StaticMaterial(Material):
     def read(f):
         f.seek(2, 1)
@@ -74,6 +64,19 @@ class StaticMaterial(Material):
 
     def write(f, material):
         f.write(b'\x00\x07')
+        write_int32(f, material.import_id)
+        write_uint32(f, material.slot_name_id)
+        f.write(material.bin)
+
+#material for skeletal mesh
+class SkeletalMaterial(Material):
+    def read(f):
+        import_id=read_int32(f)
+        slot_name_id=read_uint32(f)
+        bin=f.read(28)
+        return SkeletalMaterial(import_id, slot_name_id, bin)
+
+    def write(f, material):
         write_int32(f, material.import_id)
         write_uint32(f, material.slot_name_id)
         f.write(material.bin)

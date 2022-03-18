@@ -3,6 +3,7 @@
 from util.io_util import *
 from util.logger import logger
 
+#Base class for LOD sections
 class LODSection:
     def __init__(self):
         self.material_id = None
@@ -10,6 +11,7 @@ class LODSection:
     def update_material_ids(self, new_material_ids):
         self.material_id=new_material_ids[self.material_id]
 
+#LOD section for static mesh
 class StaticLODSection(LODSection):
     def __init__(self, f):
         self.material_id = read_uint32(f)
@@ -42,7 +44,6 @@ class StaticLODSection(LODSection):
         self.enable_collision=section.enable_collision
         self.cast_shadow=section.cast_shadow
 
-    
     def print(self, i, padding=2):
         pad = ' '*padding
         logger.log(pad+'section{}'.format(i))
@@ -54,6 +55,7 @@ class StaticLODSection(LODSection):
         logger.log(pad+'  enable_collision: {}'.format(self.enable_collision>0))
         logger.log(pad+'  cast_shadow: {}'.format(self.cast_shadow>0))
 
+#LOD section for skeletal mesh
 class SkeletalLODSection(LODSection):
     # material_id: material id
     # first_face_id: Where this section start in face data.
