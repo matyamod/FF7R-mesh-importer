@@ -4,6 +4,7 @@ ver 0.2.0
 - Add --ignore_material_names option
 - Add a function to resolve material name conflicts
 - Change compiler from pyinstaller to nuitka
+- Remove 'removeKDI' mode
 
 ver 0.1.6
 - Refine GUI
