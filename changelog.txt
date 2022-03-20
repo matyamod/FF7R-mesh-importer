@@ -1,3 +1,17 @@
+ver 0.2.0
+- Add support for static mesh
+- Add --only_phy_bones option
+- Add --ignore_material_names option
+- Add a function to resolve material name conflicts
+- Change compiler from pyinstaller to nuitka
+- Remove 'removeKDI' mode
+
+ver 0.1.6
+- Refine GUI
+- Revise error messages
+- Remove unnecessary code
+- Bugfix (fixed an error when loading some assets)
+
 ver 0.1.5
 - Refine GUI
 - Add --author argument to embed a string into a weight buffer

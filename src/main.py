@@ -1,4 +1,4 @@
-import os, argparse
+import os, argparse, shutil
 from util.io_util import *
 from util.logger import Timer, logger
 from asset.uexp import MeshUexp
@@ -19,16 +19,15 @@ def get_args():
     args = parser.parse_args()
     return args
 
-def import_mesh(ff7r_file, ue4_18_file, save_folder,
-                only_mesh=False, only_phy_bones=False, dont_remove_KDI=False,
-                ignore_material_names=False, author=''):
+def import_mesh(ff7r_file, ue4_18_file, save_folder, args):
+
     file=os.path.basename(ff7r_file)
     trg_mesh=MeshUexp(ff7r_file)
     src_mesh=MeshUexp(ue4_18_file)
-    trg_mesh.import_LODs(src_mesh, only_mesh=only_mesh, only_phy_bones=only_phy_bones,
-                        dont_remove_KDI=dont_remove_KDI, ignore_material_names=ignore_material_names)
-    if author!='':
-        trg_mesh.embed_string(author)
+    trg_mesh.import_LODs(src_mesh, only_mesh=args.only_mesh, only_phy_bones=args.only_phy_bones,
+                        dont_remove_KDI=args.dont_remove_KDI, ignore_material_names=args.ignore_material_names)
+    if args.author!='':
+        trg_mesh.embed_string(args.author)
     new_file=os.path.join(save_folder, file)
     trg_mesh.save(new_file)
     return 'Success!'
@@ -42,10 +41,14 @@ def remove_LOD(ff7r_file, save_folder):
     return 'Success!'
 
 def valid(ff7r_file, save_folder):
+    save_folder = 'workspace/valid'
+    if os.path.exists(save_folder):
+        shutil.rmtree(save_folder)
+    mkdir(save_folder)
+
     file=os.path.basename(ff7r_file)
     new_file=os.path.join(save_folder, file)
-    if os.path.exists(new_file):
-        logger.error('Valid mode will remove existing file. Delete the file before running. ({})'.format(new_file))
+
     mesh=MeshUexp(ff7r_file)
     author = mesh.get_author()
 
@@ -56,21 +59,8 @@ def valid(ff7r_file, save_folder):
         msg='Valid!'+' Author: {},'.format(author)*(author!='')
 
     except Exception as e:
-        os.remove(new_file)
-        os.remove(new_file[:-4]+'uasset')
-        msg='Invalid. '+e
-    os.remove(new_file)
-    os.remove(new_file[:-4]+'uasset')
+        msg='Invalid. {}'.format(e)
     return msg
-    
-
-def remove_KDI(ff7r_file, save_folder):
-    file=os.path.basename(ff7r_file)
-    new_file=os.path.join(save_folder, file)
-    mesh=MeshUexp(ff7r_file)
-    mesh.remove_KDI()
-    mesh.save(new_file)
-    return 'Success!'
 
 def dump_buffers(ff7r_file, save_folder):
     file=os.path.basename(ff7r_file)
@@ -80,21 +70,22 @@ def dump_buffers(ff7r_file, save_folder):
     mesh.dump_buffers(folder)
     return 'Success!'
 
+def uasset_to_uexp(file_name):
+    if (file_name is not None) and len(file_name)>6 and file_name[-6:]=='uasset':
+        file_name=file_name[:-6]+'uexp'
+    return file_name
+
 if __name__=='__main__':
     timer = Timer()
     args = get_args()
-    ff7r_file=args.ff7r_file
-    ue4_18_file=args.ue4_18_file
+    ff7r_file=uasset_to_uexp(args.ff7r_file)
+    ue4_18_file=uasset_to_uexp(args.ue4_18_file)
     save_folder=args.save_folder
     mode=args.mode
     verbose=args.verbose
-    only_mesh=args.only_mesh
-    only_phy_bones = args.only_phy_bones
-    dont_remove_KDI=args.dont_remove_KDI
-    author=args.author
-    ignore_material_names = args.ignore_material_names
 
     logger.set_verbose(verbose)
+
     if ff7r_file=='' or os.path.isdir(ff7r_file):
         logger.error('Specify uexp file.')
     if os.path.dirname(ff7r_file)==save_folder:
@@ -104,19 +95,14 @@ if __name__=='__main__':
     
     logger.log('mode: '+mode)
     if mode=='import':
-        msg = import_mesh(ff7r_file, ue4_18_file, save_folder, only_mesh=only_mesh,
-                         only_phy_bones=only_phy_bones, dont_remove_KDI=dont_remove_KDI,
-                         author=author, ignore_material_names=ignore_material_names)
-    elif mode=='removeLOD':
-        msg = remove_LOD(ff7r_file, save_folder)
-    elif mode=='valid':
-        msg = valid(ff7r_file, save_folder)
-    elif mode=='removeKDI':
-        msg = remove_KDI(ff7r_file, save_folder)
-    elif mode=='dumpBuffers':
-        msg = dump_buffers(ff7r_file, save_folder)
+        if ue4_18_file=='' or os.path.isdir(ue4_18_file):
+            logger.error('Specify uexp file.')
+        msg = import_mesh(ff7r_file, ue4_18_file, save_folder, args)
     else:
-        logger.error('Unsupported mode.')
+        functions = {'removeLOD': remove_LOD, 'valid': valid, 'dumpBuffers': dump_buffers}
+        if mode not in functions:
+            logger.error('Unsupported mode.')
+        msg = functions[mode](ff7r_file, save_folder)
 
     t=timer.now()
     logger.log('{} Run time (s): {}'.format(msg, t))
