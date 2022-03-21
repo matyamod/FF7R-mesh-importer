@@ -1,5 +1,7 @@
 from util.io_util import *
 from util.logger import logger
+from gltf.bone import Bone as gltfBone
+import struct
 
 class Bone:
     #name_id: id of name list
@@ -12,6 +14,11 @@ class Bone:
         self.name_id=read_uint32(f)
         self.instance = read_int32(f) #null?
         self.parent = read_int32(f)
+        self.pos = None
+        self.name = None
+        self.parent_name = None
+        self.children = []
+
     
     def read(f):
         return Bone(f)
@@ -32,27 +39,28 @@ class Bone:
     def update(self, bone):
         self.pos=bone.pos
 
-    def name(self, name):
+    def name_bone(self, name, parent_name):
         self.name=name
+        self.parent_name=parent_name
 
     def print_bones(bones, padding=2):
         pad=' '*padding
         i=0
         for b in bones:
-            name=b.name
-            parent_id = b.parent
-            if parent_id<0:
-                parent_name='None'
-            else:
-                parent_name=bones[parent_id].name
-            logger.log(pad+'id: '+str(i)+', name: '+name+', parent: '+parent_name)
+            logger.log(pad+'id: '+str(i)+', name: '+b.name+', parent: '+b.parent_name)
             i+=1
 
     def name_bones(bones, name_list):
         for b in bones:
             id = b.name_id
             name = name_list[id]
-            b.name(name)
+            parent_id = b.parent
+            if parent_id!=-1:
+                parent_name=bones[parent_id].name
+            else:
+                parent_name='None'
+            b.name_bone(name, parent_name)
+
 
     def get_bone_id(bones, bone_name):
         id=-1
@@ -63,6 +71,24 @@ class Bone:
                 break
             i+=1
         return id
+
+    def record_children(bones):
+        children=[[] for i in range(len(bones))]
+        bone_names = [b.name for b in bones]
+        for b in bones:
+            if b.parent_name=='None':
+                continue
+            children[bone_names.index(b.parent_name)].append(bone_names.index(b.name))
+        for b, c in zip(bones, children):
+            b.children=c
+
+    def to_gltf_bone(self):
+        ary = list(struct.unpack('<'+'f'*10, self.pos))
+        children = [c+1 for c in self.children]
+        pos = ary[4:7]
+        pos = [pos[0]/100, pos[2]/100, pos[1]/100]
+        return gltfBone(self.name, children, [ary[0], ary[2], ary[1], ary[3]], pos, [ary[7], ary[9], ary[8]])
+        #return gltfBone(self.name, children, [ary[0], ary[1], ary[2], ary[3]], pos, [ary[7], ary[8], ary[9]])
 
 class Skeleton:
     #bones: bone data
@@ -112,3 +138,9 @@ class Skeleton:
         logger.log(pad+'Skeleton (offset: {})'.format(self.offset))
         logger.log(pad+'  bone_num: {}'.format(len(self.bones)))
         Bone.print_bones(self.bones, padding=2+padding)
+
+    def to_gltf_bones(self):
+        Bone.record_children(self.bones)
+        gltf_bones = [b.to_gltf_bone() for b in self.bones]
+        return gltf_bones
+

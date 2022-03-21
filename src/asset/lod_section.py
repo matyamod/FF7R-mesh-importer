@@ -1,5 +1,3 @@
-
-
 from util.io_util import *
 from util.logger import logger
 
@@ -15,8 +13,8 @@ class LODSection:
 class StaticLODSection(LODSection):
     def __init__(self, f):
         self.material_id = read_uint32(f)
-        self.face_num = read_uint32(f)
         self.first_ib_id = read_uint32(f)
+        self.face_num = read_uint32(f)
         self.first_vertex_id = read_uint32(f)
         self.last_vertex_id = read_uint32(f)
         self.enable_collision = read_uint32(f)
@@ -27,8 +25,8 @@ class StaticLODSection(LODSection):
 
     def write(f, section):
         write_uint32(f, section.material_id)
-        write_uint32(f, section.face_num)
         write_uint32(f, section.first_ib_id)
+        write_uint32(f, section.face_num)
         write_uint32(f, section.first_vertex_id)
         write_uint32(f, section.last_vertex_id)
         write_uint32(f, section.enable_collision)
@@ -37,8 +35,8 @@ class StaticLODSection(LODSection):
     def import_section(self, section):
         self.not_first = section.not_first
         self.material_id=section.material_id
-        self.face_num=section.face_num
         self.first_ib_id=section.first_ib_id
+        self.face_num=section.face_num
         self.first_vertex_id=section.first_vertex_id
         self.last_vertex_id=section.last_vertex_id
         self.enable_collision=section.enable_collision
@@ -48,8 +46,8 @@ class StaticLODSection(LODSection):
         pad = ' '*padding
         logger.log(pad+'section{}'.format(i))
         logger.log(pad+'  material_id: {}'.format(self.material_id))
-        logger.log(pad+'  face_num: {}'.format(self.face_num))
         logger.log(pad+'  first_ib_id: {}'.format(self.first_ib_id))
+        logger.log(pad+'  face_num: {}'.format(self.face_num))
         logger.log(pad+'  first_vertex_id: {}'.format(self.first_vertex_id))
         logger.log(pad+'  last_vertex_id: {}'.format(self.last_vertex_id))
         logger.log(pad+'  enable_collision: {}'.format(self.enable_collision>0))
@@ -58,7 +56,7 @@ class StaticLODSection(LODSection):
 #LOD section for skeletal mesh
 class SkeletalLODSection(LODSection):
     # material_id: material id
-    # first_face_id: Where this section start in face data.
+    # first_ib_id: Where this section start in face data.
     # face_num: the number of faces in this section
     # first_vertex_id: Where this section start in vertex data.
     # vertex_group: Id of weight painted bones. Bone influences are specified by vertex_group's id (not bone id).
@@ -73,9 +71,7 @@ class SkeletalLODSection(LODSection):
         check(one, 1, f, 'Parse failed! (LOD_Section:StripFlags)')
         self.material_id=read_uint16(f)
 
-        self.first_face_id=read_uint32(f)
-        check(self.first_face_id%3, 0, f, 'Parse failed! (LOD_Section:BaseID)')
-        self.first_face_id=self.first_face_id//3
+        self.first_ib_id=read_uint32(f)
 
         self.face_num = read_uint32(f)
         read_null(f, 'Parse failed! (LOD_Section:Number of Faces)')
@@ -117,7 +113,7 @@ class SkeletalLODSection(LODSection):
     def write(f, section):
         write_uint16(f, 1)
         write_uint16(f, section.material_id)
-        write_uint32(f, section.first_face_id*3)
+        write_uint32(f, section.first_ib_id)
         write_uint32(f, section.face_num)
         write_null(f)
         f.write(SkeletalLODSection.UNK)
@@ -138,7 +134,7 @@ class SkeletalLODSection(LODSection):
 
     def import_section(self, section):
         self.material_id=section.material_id
-        self.first_face_id=section.first_face_id
+        self.first_ib_id=section.first_ib_id
         self.face_num=section.face_num
         self.vertex_group=section.vertex_group
         self.first_vertex_id=section.first_vertex_id
@@ -158,7 +154,7 @@ class SkeletalLODSection(LODSection):
         pad = ' '*padding
         logger.log(pad+'section '+name)
         logger.log(pad+'  material_id: {}'.format(self.material_id))
-        logger.log(pad+'  first_face_id: {}'.format(self.first_face_id))
+        logger.log(pad+'  first_ib_id: {}'.format(self.first_ib_id))
         logger.log(pad+'  face_num: {}'.format(self.face_num))
         logger.log(pad+'  first_vertex_id: {}'.format(self.first_vertex_id))
         vg_name=SkeletalLODSection.bone_ids_to_name(self.vertex_group, bones)

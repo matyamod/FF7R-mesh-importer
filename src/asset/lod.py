@@ -1,4 +1,3 @@
-import re
 from util.io_util import *
 from util.logger import logger
 
@@ -48,7 +47,7 @@ class LOD:
     def update_material_ids(self, new_material_ids):
         for section in self.sections:
             section.update_material_ids(new_material_ids)
-
+    
 #LOD for static mesh
 class StaticLOD(LOD):
     def __init__(self, offset, sections, flags, vb, vb2, color_vb, ib, ib2, unk):
@@ -269,3 +268,48 @@ class SkeletalLOD(LOD):
         self.KDI_VB=None
         for section in self.sections:
             section.remove_KDI()
+
+    def get_meta_for_gltf(self):
+        material_ids = [section.material_id for section in self.sections]
+        return material_ids, self.uv_num, self.vb2.extra_bone_flag
+
+    def parse_buffers_for_gltf(self):
+
+        def split_list(l, first_ids):
+            last_ids = first_ids[1:]+[len(l)]
+            splitted = [l[first:last] for first, last in zip(first_ids, last_ids)]
+            return splitted
+
+        normal, tangent, pos, texcoords = self.vb.parse()
+        joint, weight, joint2, weight2 = self.vb2.parse()
+        first_vertex_ids = [section.first_vertex_id for section in self.sections]
+        vertex_groups = [section.vertex_group for section in self.sections]
+
+        ls = [normal, tangent, pos, joint, weight]
+        normals, tangents, positions, joints, weights = [split_list(l, first_vertex_ids) for l in ls]
+
+        texcoords = [split_list(l, first_vertex_ids) for l in texcoords]
+
+        def func(vg, j):
+            for i in range(4):
+                id =j[i]
+                if i!=0 and id==0:
+                    continue
+                j[i]=vg[id]
+            return j
+
+        joints = [[func(vg, list(j)) for j in joint] for joint, vg in zip(joints, vertex_groups)]
+        
+        if joint2 is not None:
+            ls = [joint2, weight2]
+            joints2, weights2 = [split_list(l, first_vertex_ids) for l in ls]
+            joints2 = [[func(vg, list(j)) for j in joint] for joint, vg in zip(joints2, vertex_groups)]
+        else:
+            joints2, weights2 = None, None
+
+        indices = self.ib.parse()
+        first_ib_ids = [section.first_ib_id for section in self.sections]
+        indices = split_list(indices, first_ib_ids)
+        indices = [[i-first_id for i in ids] for ids, first_id in zip(indices, first_vertex_ids)]
+        
+        return normals, tangents, positions, texcoords, joints, weights, joints2, weights2, indices

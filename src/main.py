@@ -8,7 +8,7 @@ def get_args():
     parser.add_argument('ff7r_file', help='.uexp file extracted from FF7R')
     parser.add_argument('ue4_18_file', nargs='?', help='.uexp file exported from UE4.18')
     parser.add_argument('save_folder', help='New uasset files will be generated here.')
-    parser.add_argument('--mode', default='import', type=str, help="'import', 'removeLOD', 'valid', 'removeKDI', or 'dumpBuffers'")
+    parser.add_argument('--mode', default='import', type=str, help="'import', 'export', 'removeLOD', 'valid', or 'dumpBuffers'")
     parser.add_argument('--verbose', action='store_true', help='Shows log.')
     parser.add_argument('--only_mesh', action='store_true', help='Does not import bones.')
     parser.add_argument('--only_phy_bones', action='store_true', help='Does not import bones except phy bones.')
@@ -70,6 +70,14 @@ def dump_buffers(ff7r_file, save_folder):
     mesh.dump_buffers(folder)
     return 'Success!'
 
+def export_as_gltf(ff7r_file, save_folder):
+    file=os.path.basename(ff7r_file)
+    folder=os.path.join(save_folder, file[:-5])
+    mkdir(folder)
+    mesh=MeshUexp(ff7r_file)
+    mesh.save_as_gltf(folder)
+    return 'Success!'
+
 def uasset_to_uexp(file_name):
     if (file_name is not None) and len(file_name)>6 and file_name[-6:]=='uasset':
         file_name=file_name[:-6]+'uexp'
@@ -99,7 +107,7 @@ if __name__=='__main__':
             logger.error('Specify uexp file.')
         msg = import_mesh(ff7r_file, ue4_18_file, save_folder, args)
     else:
-        functions = {'removeLOD': remove_LOD, 'valid': valid, 'dumpBuffers': dump_buffers}
+        functions = {'export': export_as_gltf, 'removeLOD': remove_LOD, 'valid': valid, 'dumpBuffers': dump_buffers}
         if mode not in functions:
             logger.error('Unsupported mode.')
         msg = functions[mode](ff7r_file, save_folder)

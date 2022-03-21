@@ -7,6 +7,8 @@ from asset.skeleton import Skeleton
 from asset.material import Material, StaticMaterial, SkeletalMaterial
 from asset.buffer import Buffer
 
+from gltf.gltf import glTF
+
 #Base class for mesh
 class Mesh:
     def __init__(self, LODs):
@@ -192,6 +194,15 @@ class SkeletalMesh(Mesh):
             lod.remove_KDI()
 
         logger.log("KDI buffers have been removed.")
+
+    def save_as_gltf(self, name, save_folder):
+        bones = self.skeleton.to_gltf_bones()
+        material_names = [m.import_name for m in self.materials]
+        material_ids, uv_num, extra_bone_flag = self.LODs[0].get_meta_for_gltf()
+        gltf = glTF(bones, material_names, material_ids, uv_num, extra_bone_flag)
+        normals, tangents, positions, texcoords, joints, weights, joints2, weights2, indices = self.LODs[0].parse_buffers_for_gltf()
+        gltf.set_parsed_buffers(normals, tangents, positions, texcoords, joints, weights, joints2, weights2, indices)
+        gltf.save(name, save_folder)
         
 #collider or something? low poly mesh.
 class PhysicalMesh:

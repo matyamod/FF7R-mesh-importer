@@ -18,6 +18,7 @@ class MeshUexp:
     def load(self, file):
         if file[-4:]!='uexp':
             logger.error('Not .uexp! ({})'.format(file))
+        self.name = os.path.splitext(os.path.basename(file))[0]
 
         #get name list and export data from .uasset
         uasset_file=file[:-4]+'uasset'
@@ -92,6 +93,13 @@ class MeshUexp:
             f.write(self.foot)
             uexp_size=f.tell()
         self.uasset.save(file[:-4]+'uasset', uexp_size)
+
+    def save_as_gltf(self, save_folder):
+        if self.skeletal:
+            self.mesh.save_as_gltf(self.name, save_folder)
+        else:
+            logger.error('Unsupported method for static mesh')
+
 
     def remove_LODs(self):
         self.mesh.remove_LODs()
