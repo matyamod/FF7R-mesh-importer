@@ -6,8 +6,8 @@ A tool for importing meshes into uassets extracted from FF7R
 
 ## Features
 
-- Inject meshe assets
-- Export meshes assets as glTF
+- Inject mesh assets
+- Export mesh assets as glTF
 - Dump buffers
 
 ## Notes
