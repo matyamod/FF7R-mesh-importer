@@ -1,8 +1,14 @@
 ![build](https://github.com/matyalatte/FF7R-mesh-importer/actions/workflows/build.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-# FF7R-mesh-importer ver0.2.0
+# FF7R-mesh-importer ver0.2.1
 A tool for importing meshes into uassets extracted from FF7R
+
+## Features
+
+- Inject meshe assets
+- Export meshes assets as glTF
+- Dump buffers
 
 ## Notes
 

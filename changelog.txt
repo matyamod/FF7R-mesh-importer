@@ -1,3 +1,8 @@
+ver 0.2.1
+- Add export mode for skeletal mesh
+- Add traceback to logger
+- Bugfix (fixed an error when loading some static mesh assets)
+
 ver 0.2.0
 - Add support for static mesh
 - Add --only_phy_bones option
