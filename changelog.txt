@@ -1,5 +1,5 @@
 ver 0.2.1
-- Add export mode for skeletal mesh
+- Add export mode
 - Add traceback to logger
 - Bugfix (fixed an error when loading some static mesh assets)
 
