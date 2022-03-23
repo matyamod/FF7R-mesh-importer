@@ -290,20 +290,15 @@ class SkeletalLOD(LOD):
 
         texcoords = [split_list(l, first_vertex_ids) for l in texcoords]
 
-        def func(vg, j):
-            for i in range(4):
-                id =j[i]
-                if i!=0 and id==0:
-                    continue
-                j[i]=vg[id]
-            return j
+        def func(vertex_groups, joints, weights):
+            return [[[vg[j[i]]*(w[i]!=0) for i in range(4)] for j, w in zip(joint, weight)] for joint, weight, vg in zip(joints, weights, vertex_groups)]
 
-        joints = [[func(vg, list(j)) for j in joint] for joint, vg in zip(joints, vertex_groups)]
+        joints = func(vertex_groups, joints, weights)
         
         if joint2 is not None:
             ls = [joint2, weight2]
             joints2, weights2 = [split_list(l, first_vertex_ids) for l in ls]
-            joints2 = [[func(vg, list(j)) for j in joint] for joint, vg in zip(joints2, vertex_groups)]
+            joints2 = func(vertex_groups, joints2, weights2)
         else:
             joints2, weights2 = None, None
 
