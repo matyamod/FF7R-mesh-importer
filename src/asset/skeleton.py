@@ -120,7 +120,7 @@ class Skeleton:
     def import_bones(self, bones, only_phy_bones=False):
         for self_bone, new_bone in zip(self.bones, bones):
             #if self_bone.name!=new_bone.name:
-            #    logger.error("")
+            #    raise RuntimeError("")
             #print('{} -> {}'.format(self_bone.pos[4:7], new_bone.pos[4:7]))
             if only_phy_bones and 'Phy' not in self_bone.name:
                 continue

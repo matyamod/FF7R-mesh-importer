@@ -4,7 +4,7 @@ import struct, math
 class Mat4:
     def __init__(self, mat):
         if len(mat[0])!=4 or len(mat)!=4:
-            logger.error('Not Mat4')
+            raise RuntimeError('Not Mat4')
         self.mat = mat
         
     def __str__(self):

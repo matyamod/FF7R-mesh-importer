@@ -61,7 +61,7 @@ class Mesh:
             while (buf!=b'\xFF\xFF\xFF'):
                 buf=b''.join([buf[1:], f.read(1)])
                 if f.tell()-offset>10000:
-                    logger.error('Parse failed. Material properties not found. This is an unexpected error.')
+                    raise RuntimeError('Material properties not found. This is an unexpected error.')
             f.seek(-4,1)
             import_id=-read_int32(f)-1
             if imports[import_id].material:
@@ -169,14 +169,14 @@ class SkeletalMesh(Mesh):
     def import_LODs(self, skeletalmesh, only_mesh=False, only_phy_bones=False,
                     dont_remove_KDI=False, ignore_material_names=False):
         if not self.ff7r:
-            logger.error("The file should be an FF7R's asset!")
+            raise RuntimeError("The file should be an FF7R's asset!")
 
         bone_diff=len(self.skeleton.bones)-len(skeletalmesh.skeleton.bones)
         if bone_diff!=0:
             msg = 'Skeletons are not the same.'
             if bone_diff==-1:
                 msg+=' Maybe UE4 added an extra bone as a root bone.'
-            logger.error(msg)
+            raise RuntimeError(msg)
 
         if not only_mesh:
             self.skeleton.import_bones(skeletalmesh.skeleton.bones, only_phy_bones=only_phy_bones)
@@ -188,7 +188,7 @@ class SkeletalMesh(Mesh):
 
     def remove_KDI(self):
         if not self.ff7r:
-            logger.error("The file should be an FF7R's asset!")
+            raise RuntimeError("The file should be an FF7R's asset!")
         
         for lod in self.LODs:
             lod.remove_KDI()

@@ -28,7 +28,7 @@ class Material:
 
     def check_confliction(materials1, materials2, ignore_material_names=False):
         if len(materials1)<len(materials2):
-            logger.error('Materials are too much. You can not import the mesh.')
+            raise RuntimeError('Materials are too much. You can not import the mesh.')
 
         def get_range(num):
             return [i for i in range(num)]
@@ -66,7 +66,7 @@ class Material:
             msg = 'Unknown material name has been detected. ({}) You can not import the mesh. or use "--ignore_material_names".'.format(mat2.import_name)
             if 'dummy_material' in mat2.import_name:
                 msg+=' "dummy_material" is not the correct material name. Maybe UE Viewer failed to parse the name.'
-            logger.error(msg)
+            raise RuntimeError(msg)
 
         if new_material_ids!=get_range(len(materials2)):
             logger.log('Material name conflicts detected. But it has been resolved correctly.')

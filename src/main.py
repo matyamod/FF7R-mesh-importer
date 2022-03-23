@@ -94,24 +94,29 @@ if __name__=='__main__':
 
     logger.set_verbose(verbose)
 
-    if ff7r_file=='' or os.path.isdir(ff7r_file):
-        logger.error('Specify uexp file.')
-    if os.path.dirname(ff7r_file)==save_folder:
-        logger.error('Save folder must be different from the original asset folder.')
-    if save_folder!='':
-        mkdir(save_folder)
-    
-    logger.log('mode: '+mode)
-    if mode=='import':
-        if ue4_18_file=='' or os.path.isdir(ue4_18_file):
-            logger.error('Specify uexp file.')
-        msg = import_mesh(ff7r_file, ue4_18_file, save_folder, args)
-    else:
-        functions = {'export': export_as_gltf, 'removeLOD': remove_LOD, 'valid': valid, 'dumpBuffers': dump_buffers}
-        if mode not in functions:
-            logger.error('Unsupported mode.')
-        msg = functions[mode](ff7r_file, save_folder)
+    try:
+        if ff7r_file=='' or os.path.isdir(ff7r_file):
+            raise RuntimeError('Specify uexp file.')
+        if os.path.dirname(ff7r_file)==save_folder:
+            raise RuntimeError('Save folder must be different from the original asset folder.')
+        if save_folder!='':
+            mkdir(save_folder)
+        
+        logger.log('mode: '+mode)
+        if mode=='import':
+            if ue4_18_file=='' or os.path.isdir(ue4_18_file):
+                raise RuntimeError('Specify uexp file.')
+            msg = import_mesh(ff7r_file, ue4_18_file, save_folder, args)
+        else:
+            functions = {'export': export_as_gltf, 'removeLOD': remove_LOD, 'valid': valid, 'dumpBuffers': dump_buffers}
+            if mode not in functions:
+                raise RuntimeError('Unsupported mode.')
+            msg = functions[mode](ff7r_file, save_folder)
+        t=timer.now()
+        logger.log('{} Run time (s): {}'.format(msg, t))
+        logger.close()
 
-    t=timer.now()
-    logger.log('{} Run time (s): {}'.format(msg, t))
-    logger.close()
+    except Exception as e:
+        logger.error()
+
+    

@@ -18,13 +18,13 @@ class MeshUexp:
 
     def load(self, file):
         if file[-4:]!='uexp':
-            logger.error('Not .uexp! ({})'.format(file))
+            raise RuntimeError('Not .uexp! ({})'.format(file))
         self.name = os.path.splitext(os.path.basename(file))[0]
 
         #get name list and export data from .uasset
         uasset_file=file[:-4]+'uasset'
         if not os.path.exists(uasset_file):
-            logger.error('FileNotFound: You should put .uasset in the same directory as .uexp. ({})'.format(uasset_file))
+            raise RuntimeError('FileNotFound: You should put .uasset in the same directory as .uexp. ({})'.format(uasset_file))
         self.uasset = Uasset(uasset_file)
         self.name_list=self.uasset.name_list        
         self.exports = self.uasset.exports
@@ -42,7 +42,7 @@ class MeshUexp:
                 if imp.material:
                     has_material=True
             if not has_material:
-                logger.error('Material slot is empty. Be sure materials are assigned correctly in UE4.')
+                raise RuntimeError('Material slot is empty. Be sure materials are assigned correctly in UE4.')
 
         logger.log('Loading '+file+'...', ignore_verbose=True)
         #open .uexp
@@ -50,7 +50,7 @@ class MeshUexp:
 
             for export in self.exports:
                 if f.tell()+self.uasset.size!=export.offset:
-                    logger.error('Parse failed.')
+                    raise RuntimeError('Parse failed.')
                 if export.ignore:
                     logger.log('{} (offset: {})'.format(export.name, f.tell()))
                     logger.log('  size: {}'.format(export.size))
@@ -108,7 +108,7 @@ class MeshUexp:
         if self.asset_type=='SkeletalMesh':
             self.mesh.save_as_gltf(self.name, save_folder)
         else:
-            logger.error('Unsupported feature for static mesh')
+            raise RuntimeError('Unsupported feature for static mesh')
 
 
     def remove_LODs(self):
@@ -117,7 +117,7 @@ class MeshUexp:
     def import_LODs(self, mesh_uexp, only_mesh=False, only_phy_bones=False,
                     dont_remove_KDI=False, ignore_material_names=False):
         if self.asset_type!=mesh_uexp.asset_type and self.asset_type!='Skeleton':
-            logger.error('Asset types are not the same. ({}, {})'.format(self.asset_type, mesh_uexp.asset_type))
+            raise RuntimeError('Asset types are not the same. ({}, {})'.format(self.asset_type, mesh_uexp.asset_type))
         if self.asset_type=='SkeletalMesh':
             self.mesh.import_LODs(mesh_uexp.mesh, only_mesh=only_mesh,
                                           only_phy_bones=only_phy_bones, dont_remove_KDI=dont_remove_KDI,
@@ -126,14 +126,14 @@ class MeshUexp:
             self.mesh.import_LODs(mesh_uexp.mesh, ignore_material_names=ignore_material_names)
         elif self.asset_type=='Skeleton':
             if mesh_uexp.asset_type!='SkeletalMesh':
-                logger.error('ue4_18_file should be skeletal mesh.')
+                raise RuntimeError('ue4_18_file should be skeletal mesh.')
             self.skeleton.import_bones(mesh_uexp.mesh.skeleton.bones, only_phy_bones=only_phy_bones)
 
     def remove_KDI(self):
         if self.asset_type=='SkeletalMesh':
             self.mesh.remove_KDI()
         else:
-            logger.error('Unsupported feature for static mesh')
+            raise RuntimeError('Unsupported feature for static mesh')
 
     def dump_buffers(self, save_folder):
         self.mesh.dump_buffers(save_folder)

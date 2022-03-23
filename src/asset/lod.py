@@ -15,7 +15,7 @@ class LOD:
 
     def import_LOD(self, lod, name=''):
         if len(self.sections)<len(lod.sections):
-            logger.error('too many materials')
+            raise RuntimeError('too many materials')
         f_num1=self.ib.size//3
         f_num2=lod.ib.size//3
         v_num1=self.vb.vertex_num
@@ -86,7 +86,7 @@ class StaticLOD(LOD):
         read_const_uint32(f, 1)
         null = read_uint32(f)
         if null!=0:
-            logger.error('Unsupported index buffer detected. You can not import "Adjacency Buffer" and "Reversed Index Buffer".')
+            raise RuntimeError('Unsupported index buffer detected. You can not import "Adjacency Buffer" and "Reversed Index Buffer".')
 
         ib2 = StaticIndexBuffer.read(f, name='IB2')
         unk = f.read(48)

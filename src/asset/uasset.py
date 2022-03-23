@@ -213,7 +213,7 @@ class UassetExport: #104 bytes
                 export.ignore=False
                 asset_type = export.import_name
             else:
-                logger.error('Unsupported exports. (export: {}, file: {})'.format(name, file_name))
+                raise RuntimeError('Unsupported exports. (export: {}, file: {})'.format(name, file_name))
         return asset_type
 
 
@@ -235,7 +235,7 @@ class Uasset:
 
     def __init__(self, uasset_file):
         if uasset_file[-7:]!='.uasset':
-            logger.error('Not .uasset. ({})'.format(uasset_file))
+            raise RuntimeError('Not .uasset. ({})'.format(uasset_file))
 
         logger.log('Loading '+uasset_file+'...', ignore_verbose=True)
 
