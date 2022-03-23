@@ -19,7 +19,6 @@ class Bone:
         self.parent_name = None
         self.children = []
 
-    
     def read(f):
         return Bone(f)
 
@@ -199,8 +198,6 @@ class SkeletonAsset:
                 if self_bone.name==name:
                     if only_phy_bones and 'Phy' not in self_bone.name:
                         continue
-                    if self_bone.pos!=new_bone.pos:
-                        c+=1
                     self_bone.update(new_bone)
         if only_phy_bones:
             logger.log('Phy bones have been imported.', ignore_verbose=True)

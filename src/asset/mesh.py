@@ -80,10 +80,10 @@ class StaticMesh(Mesh):
     def read(f, ff7r, name_list, imports):
         offset=f.tell()
         Mesh.seek_materials(f, imports)
-        f.seek(-10-51*(not ff7r),1)
+        f.seek(-10-(51+21)*(not ff7r),1)
         material_offset=f.tell()
         num = read_uint32(f)
-        f.seek((not ff7r)*51, 1)
+        f.seek((not ff7r)*(51+21), 1)
 
         materials=[]
         for i in range(num):
