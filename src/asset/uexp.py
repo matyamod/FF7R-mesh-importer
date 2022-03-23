@@ -105,10 +105,9 @@ class MeshUexp:
         self.uasset.save(file[:-4]+'uasset', uexp_size)
 
     def save_as_gltf(self, save_folder):
-        if self.asset_type=='SkeletalMesh':
-            self.mesh.save_as_gltf(self.name, save_folder)
-        else:
+        if self.asset_type=='Skeleton':
             raise RuntimeError('Unsupported feature for static mesh')
+        self.mesh.save_as_gltf(self.name, save_folder)
 
 
     def remove_LODs(self):

@@ -47,7 +47,16 @@ class LOD:
     def update_material_ids(self, new_material_ids):
         for section in self.sections:
             section.update_material_ids(new_material_ids)
-    
+
+    def get_meta_for_gltf(self):
+        material_ids = [section.material_id for section in self.sections]
+        return material_ids, self.uv_num
+
+def split_list(l, first_ids):
+    last_ids = first_ids[1:]+[len(l)]
+    splitted = [l[first:last] for first, last in zip(first_ids, last_ids)]
+    return splitted
+
 #LOD for static mesh
 class StaticLOD(LOD):
     def __init__(self, offset, sections, flags, vb, vb2, color_vb, ib, ib2, unk):
@@ -127,6 +136,23 @@ class StaticLOD(LOD):
         self.face_num = lod.face_num
         self.flags = lod.flags
         #self.unk = new_lod.unk #if import this, umodel will crash
+
+    def parse_buffers_for_gltf(self):
+        pos = self.vb.parse()
+        normal, tangent, texcoords = self.vb2.parse()
+        first_vertex_ids = [section.first_vertex_id for section in self.sections]
+
+        ls = [normal, tangent, pos]
+        normals, tangents, positions = [split_list(l, first_vertex_ids) for l in ls]
+
+        texcoords = [split_list(l, first_vertex_ids) for l in texcoords]
+
+        indices = self.ib.parse()
+        first_ib_ids = [section.first_ib_id for section in self.sections]
+        indices = split_list(indices, first_ib_ids)
+        indices = [[i-first_id for i in ids] for ids, first_id in zip(indices, first_vertex_ids)]
+        
+        return normals, tangents, positions, texcoords, indices
 
 #LOD for skeletal mesh
 class SkeletalLOD(LOD):
@@ -269,17 +295,7 @@ class SkeletalLOD(LOD):
         for section in self.sections:
             section.remove_KDI()
 
-    def get_meta_for_gltf(self):
-        material_ids = [section.material_id for section in self.sections]
-        return material_ids, self.uv_num, self.vb2.extra_bone_flag
-
     def parse_buffers_for_gltf(self):
-
-        def split_list(l, first_ids):
-            last_ids = first_ids[1:]+[len(l)]
-            splitted = [l[first:last] for first, last in zip(first_ids, last_ids)]
-            return splitted
-
         normal, tangent, pos, texcoords = self.vb.parse()
         joint, weight, joint2, weight2 = self.vb2.parse()
         first_vertex_ids = [section.first_vertex_id for section in self.sections]

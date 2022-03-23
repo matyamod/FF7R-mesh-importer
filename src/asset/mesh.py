@@ -108,7 +108,15 @@ class StaticMesh(Mesh):
 
     def write(f, staticmesh):
         f.write(staticmesh.unk)
-        write_array(f, staticmesh.LODs, StaticLOD.write, with_length=True)        
+        write_array(f, staticmesh.LODs, StaticLOD.write, with_length=True)
+    
+    def save_as_gltf(self, name, save_folder):
+        material_names = [m.import_name for m in self.materials]
+        material_ids, uv_num = self.LODs[0].get_meta_for_gltf()
+        gltf = glTF(None, material_names, material_ids, uv_num)
+        normals, tangents, positions, texcoords, indices= self.LODs[0].parse_buffers_for_gltf()
+        gltf.set_parsed_buffers(normals, tangents, positions, texcoords, None, None, None, None, indices)
+        gltf.save(name, save_folder)
 
 #skeletal mesh
 class SkeletalMesh(Mesh):
@@ -198,8 +206,8 @@ class SkeletalMesh(Mesh):
     def save_as_gltf(self, name, save_folder):
         bones = self.skeleton.to_gltf_bones()
         material_names = [m.import_name for m in self.materials]
-        material_ids, uv_num, extra_bone_flag = self.LODs[0].get_meta_for_gltf()
-        gltf = glTF(bones, material_names, material_ids, uv_num, extra_bone_flag)
+        material_ids, uv_num = self.LODs[0].get_meta_for_gltf()
+        gltf = glTF(bones, material_names, material_ids, uv_num)
         normals, tangents, positions, texcoords, joints, weights, joints2, weights2, indices = self.LODs[0].parse_buffers_for_gltf()
         gltf.set_parsed_buffers(normals, tangents, positions, texcoords, joints, weights, joints2, weights2, indices)
         gltf.save(name, save_folder)
