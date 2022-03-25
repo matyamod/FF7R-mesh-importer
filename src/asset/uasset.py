@@ -1,7 +1,5 @@
-
-from io_util import *
-from logger import logger
-
+from util.io_util import *
+from util.logger import logger
 '''
 FILE HEADER
   byte {4}       - Unreal Header (193,131,42,158)
@@ -107,7 +105,6 @@ class UassetHeader:
         f.write(header.unk4)
         write_uint32(f, header.file_data_offset)
 
-
     def print(self):
         logger.log('Header info')
         logger.log('  version: {}'.format(self.version))
@@ -143,20 +140,24 @@ class UassetImport: #28 bytes
         f.write(import_.bin3)
 
     def name_imports(imports, name_list):
-        material_name_list=[]
-        ff7r=False
         skeletal=False
+
         for import_ in imports:
             import_.name=name_list[import_.name_id]
             import_.class_name=name_list[import_.class_id]
             if import_.class_name in ['Material', 'MaterialInstanceConstant']:
                 import_.material=True
-            if import_.class_name=='MaterialInstanceConstant':
-                ff7r=True
             if import_.class_name=='SkeletalMesh':
                 skeletal=True
-            
-        return ff7r, skeletal
+
+        ff7r=False
+        for import_ in imports:
+            if import_.class_name=='MaterialInstanceConstant':
+                ff7r=True
+            if not skeletal and import_.class_name=='Material' and ('NavCollision' not in name_list):
+                ff7r=True
+
+        return ff7r
 
     def print(self, padding=2):
         pad=' '*padding
@@ -167,11 +168,13 @@ class UassetExport: #104 bytes
     KNOWN_EXPORTS=['EndEmissiveColorUserData', 'SQEX_BonamikAssetUserData', \
         'SQEX_KineDriver_AssetUserData', 'SkelMeshBoneAttributeRedirectorUserData', \
         'BodySetup', 'SkelMeshBoneAttributeFilterUserData', \
-        'EndPhysicalConstraintUserData']
-    IGNORE=[True, True, True, True, True, True, True]
+        'EndPhysicalConstraintUserData', 'NavCollision', \
+        'SkeletalMeshSocket']
+    IGNORE=[True, True, True, True, True, True, True, True, True]
     #'BodySetup'
     def __init__(self, f):
-        self.bin1=f.read(16)
+        self.import_id = -read_int32(f)-1
+        self.bin1=f.read(12)
         self.name_id=read_uint32(f)
         self.bin2=f.read(8)
         self.size=read_uint32(f)
@@ -183,6 +186,7 @@ class UassetExport: #104 bytes
         return UassetExport(f)
     
     def write(f, export):
+        write_int32(f, -export.import_id-1)
         f.write(export.bin1)
         write_uint32(f, export.name_id)
         f.write(export.bin2)
@@ -195,20 +199,23 @@ class UassetExport: #104 bytes
         self.size=size
         self.offset=offset
 
-    def name_exports(exports, name_list, file_name):
+    def name_exports(exports, imports, name_list, file_name):
         for export in exports:
             name=name_list[export.name_id]
+            export.import_name = imports[export.import_id].name
+            export.name=name
 
             if name in UassetExport.KNOWN_EXPORTS:
                 export.id=UassetExport.KNOWN_EXPORTS.index(name)
                 export.ignore=UassetExport.IGNORE[export.id]
-            elif name in file_name:
+            elif (export.import_name in ['SkeletalMesh', 'StaticMesh', 'Skeleton']):
                 export.id=-1
                 export.ignore=False
+                asset_type = export.import_name
             else:
-                logger.error('Unsupported assets. ({})'.format(name))
+                raise RuntimeError('Unsupported exports. (export: {}, file: {})'.format(name, file_name))
+        return asset_type
 
-            export.name=name
 
     def read_uexp(self, f):
         self.bin=f.read(self.size)
@@ -219,6 +226,7 @@ class UassetExport: #104 bytes
     def print(self, padding=2):
         pad=' '*padding
         logger.log(pad+self.name)
+        logger.log(pad+'  class: {}'.format(self.import_name))
         logger.log(pad+'  size: {}'.format(self.size))
         logger.log(pad+'  offset: {}'.format(self.offset))
 
@@ -227,7 +235,7 @@ class Uasset:
 
     def __init__(self, uasset_file):
         if uasset_file[-7:]!='.uasset':
-            logger.error('Not .uasset. ({})'.format(uasset_file))
+            raise RuntimeError('Not .uasset. ({})'.format(uasset_file))
 
         logger.log('Loading '+uasset_file+'...', ignore_verbose=True)
 
@@ -254,7 +262,7 @@ class Uasset:
         self.bin2=f.read(self.header.import_offset-offset)
 
         self.imports=read_array(f, UassetImport.read, len=self.header.import_num)
-        self.ff7r, self.skeletal=UassetImport.name_imports(self.imports, self.name_list)
+        self.ff7r = UassetImport.name_imports(self.imports, self.name_list)
         logger.log('Import')
         for import_ in self.imports:
             import_.print()
@@ -262,7 +270,7 @@ class Uasset:
         offset=f.tell()
         self.bin3=f.read(self.header.export_offset-offset)
         self.exports=read_array(f, UassetExport.read, len=self.header.export_num)
-        UassetExport.name_exports(self.exports, self.name_list, self.file)
+        self.asset_type = UassetExport.name_exports(self.exports, self.imports, self.name_list, self.file)
 
         logger.log('Export')
         for export in self.exports:

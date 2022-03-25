@@ -1,5 +1,5 @@
 import os, struct
-from logger import logger
+from util.logger import logger
 
 def mkdir(dir):
     os.makedirs(dir, exist_ok=True)
@@ -11,13 +11,13 @@ def get_size(file):
     file.seek(pos)
     return size
 
-def check(actual, expected, f=None, msg=''):
+def check(actual, expected, f=None, msg='Parse failed. This is unexpected error.'):
     if actual!=expected:
         if f is not None:
             logger.log('offset: {}'.format(f.tell()), ignore_verbose=True)
         logger.log('actual: {}'.format(actual), ignore_verbose=True)
         logger.log('expected: {}'.format(expected), ignore_verbose=True)
-        logger.error(msg)
+        raise RuntimeError(msg)
 
 def read_uint32(file):
     bin=file.read(4)
@@ -185,7 +185,7 @@ def compare(file1,file2):
     if i==size-1:
         logger.log('Same data!', ignore_verbose=True)
     else:
-        logger.error('Not same :{}'.format(i))
+        raise RuntimeError('Not same :{}'.format(i))
 
     if f1_size!=f2_size:
-        logger.error('Not same size. ({}, {})'.format(f1_size, f2_size))
+        raise RuntimeError('Not same size. ({}, {})'.format(f1_size, f2_size))

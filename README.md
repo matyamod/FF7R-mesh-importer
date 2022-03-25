@@ -1,8 +1,14 @@
 ![build](https://github.com/matyalatte/FF7R-mesh-importer/actions/workflows/build.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-# FF7R-mesh-importer ver0.1.6
-A tool for importing skeletal meshes into uassets extracted from FF7R
+# FF7R-mesh-importer ver0.2.1
+A tool for importing meshes into uassets extracted from FF7R
+
+## Features
+
+- Inject mesh assets
+- Export mesh assets as glTF
+- Dump buffers
 
 ## Notes
 
@@ -13,8 +19,8 @@ A tool for importing skeletal meshes into uassets extracted from FF7R
 
 ## Supported Assets
 
-- Character assets
-- Weapon assets except `WE90**`
+- All skeletal mesh assets
+- All static mesh assets
 
 ## Requirements
 
@@ -27,6 +33,7 @@ A tool for importing skeletal meshes into uassets extracted from FF7R
 - UE4.18.3
 - Blender(>=2.8)
 - Psk plugin (I recommend using [my customized version](https://github.com/matyalatte/blender3d_import_psk_psa))
+- [glTF plugin](https://github.com/KhronosGroup/glTF-Blender-IO)
 - Pack tool (e.g. u4pak)
 
 ## Download
@@ -39,7 +46,7 @@ Download `FF7R-MeshImporter*.zip` from [here](https://github.com/matyalatte/FF7R
 - A special thanks to Narknon for the GUI implementation and much discussion.
 - A special thanks to TerryXXX for the tutorial, much discussion, and doing many tests.
 - Thanks to Jordan Tucker for the data map.
-- Thanks to JujuB and Amiibolad for the testing.
+- Thanks to JujuB, Amiibolad, and Altezein for the testing.
 
 ## Command Line Usage
 You can use our tool with the Command-line.<br>
