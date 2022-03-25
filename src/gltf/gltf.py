@@ -1,5 +1,4 @@
 import os, json, sys, struct
-from turtle import color
 from gltf.bone import Bone
 from util.logger import logger
 
