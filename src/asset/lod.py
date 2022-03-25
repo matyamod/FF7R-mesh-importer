@@ -268,7 +268,8 @@ class SkeletalLOD(LOD):
             if self.vb.vertex_num>=self.KDI_VB.size:
                 self.KDI_VB.buf=self.KDI_VB.buf[:self.vb.vertex_num*16]
             else:
-                self.KDI_VB=b''.join([self.KDI_VB, b'\xff'*4*(self.vb.vertex_num-self.KDI_VB.size)])
+                self.KDI_VB.buf=b''.join([self.KDI_VB.buf, b'\xff'*4*(self.vb.vertex_num-self.KDI_VB.size)])
+            self.KDI_VB.size=self.vb.size
 
     def get_buffers(self):
         buffers = super().get_buffers()
