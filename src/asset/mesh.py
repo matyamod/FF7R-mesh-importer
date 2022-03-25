@@ -7,6 +7,8 @@ from asset.skeleton import Skeleton
 from asset.material import Material, StaticMaterial, SkeletalMaterial
 from asset.buffer import Buffer
 
+from gltf.gltf import glTF
+
 #Base class for mesh
 class Mesh:
     def __init__(self, LODs):
@@ -59,7 +61,7 @@ class Mesh:
             while (buf!=b'\xFF\xFF\xFF'):
                 buf=b''.join([buf[1:], f.read(1)])
                 if f.tell()-offset>10000:
-                    logger.error('Parse failed. Material properties not found. This is an unexpected error.')
+                    raise RuntimeError('Material properties not found. This is an unexpected error.')
             f.seek(-4,1)
             import_id=-read_int32(f)-1
             if imports[import_id].material:
@@ -78,10 +80,10 @@ class StaticMesh(Mesh):
     def read(f, ff7r, name_list, imports):
         offset=f.tell()
         Mesh.seek_materials(f, imports)
-        f.seek(-10-51*(not ff7r),1)
+        f.seek(-10-(51+21)*(not ff7r),1)
         material_offset=f.tell()
         num = read_uint32(f)
-        f.seek((not ff7r)*51, 1)
+        f.seek((not ff7r)*(51+21), 1)
 
         materials=[]
         for i in range(num):
@@ -106,7 +108,15 @@ class StaticMesh(Mesh):
 
     def write(f, staticmesh):
         f.write(staticmesh.unk)
-        write_array(f, staticmesh.LODs, StaticLOD.write, with_length=True)        
+        write_array(f, staticmesh.LODs, StaticLOD.write, with_length=True)
+    
+    def save_as_gltf(self, name, save_folder):
+        material_names = [m.import_name for m in self.materials]
+        material_ids, uv_num = self.LODs[0].get_meta_for_gltf()
+        gltf = glTF(None, material_names, material_ids, uv_num)
+        normals, tangents, positions, texcoords, indices= self.LODs[0].parse_buffers_for_gltf()
+        gltf.set_parsed_buffers(normals, tangents, positions, texcoords, None, None, None, None, indices)
+        gltf.save(name, save_folder)
 
 #skeletal mesh
 class SkeletalMesh(Mesh):
@@ -167,14 +177,14 @@ class SkeletalMesh(Mesh):
     def import_LODs(self, skeletalmesh, only_mesh=False, only_phy_bones=False,
                     dont_remove_KDI=False, ignore_material_names=False):
         if not self.ff7r:
-            logger.error("The file should be an FF7R's asset!")
+            raise RuntimeError("The file should be an FF7R's asset!")
 
         bone_diff=len(self.skeleton.bones)-len(skeletalmesh.skeleton.bones)
         if bone_diff!=0:
             msg = 'Skeletons are not the same.'
             if bone_diff==-1:
                 msg+=' Maybe UE4 added an extra bone as a root bone.'
-            logger.error(msg)
+            raise RuntimeError(msg)
 
         if not only_mesh:
             self.skeleton.import_bones(skeletalmesh.skeleton.bones, only_phy_bones=only_phy_bones)
@@ -186,12 +196,21 @@ class SkeletalMesh(Mesh):
 
     def remove_KDI(self):
         if not self.ff7r:
-            logger.error("The file should be an FF7R's asset!")
+            raise RuntimeError("The file should be an FF7R's asset!")
         
         for lod in self.LODs:
             lod.remove_KDI()
 
         logger.log("KDI buffers have been removed.")
+
+    def save_as_gltf(self, name, save_folder):
+        bones = self.skeleton.to_gltf_bones()
+        material_names = [m.import_name for m in self.materials]
+        material_ids, uv_num = self.LODs[0].get_meta_for_gltf()
+        gltf = glTF(bones, material_names, material_ids, uv_num)
+        normals, tangents, positions, texcoords, joints, weights, joints2, weights2, indices = self.LODs[0].parse_buffers_for_gltf()
+        gltf.set_parsed_buffers(normals, tangents, positions, texcoords, joints, weights, joints2, weights2, indices)
+        gltf.save(name, save_folder)
         
 #collider or something? low poly mesh.
 class PhysicalMesh:

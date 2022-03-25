@@ -140,7 +140,6 @@ class UassetImport: #28 bytes
         f.write(import_.bin3)
 
     def name_imports(imports, name_list):
-        has_material=False
         skeletal=False
 
         for import_ in imports:
@@ -148,7 +147,6 @@ class UassetImport: #28 bytes
             import_.class_name=name_list[import_.class_id]
             if import_.class_name in ['Material', 'MaterialInstanceConstant']:
                 import_.material=True
-                has_material=True
             if import_.class_name=='SkeletalMesh':
                 skeletal=True
 
@@ -159,9 +157,7 @@ class UassetImport: #28 bytes
             if not skeletal and import_.class_name=='Material' and ('NavCollision' not in name_list):
                 ff7r=True
 
-        if not has_material:
-            logger.error('Material slot is empty. Be sure materials are assigned correctly in UE4.')
-        return ff7r, skeletal
+        return ff7r
 
     def print(self, padding=2):
         pad=' '*padding
@@ -172,8 +168,9 @@ class UassetExport: #104 bytes
     KNOWN_EXPORTS=['EndEmissiveColorUserData', 'SQEX_BonamikAssetUserData', \
         'SQEX_KineDriver_AssetUserData', 'SkelMeshBoneAttributeRedirectorUserData', \
         'BodySetup', 'SkelMeshBoneAttributeFilterUserData', \
-        'EndPhysicalConstraintUserData', 'NavCollision']
-    IGNORE=[True, True, True, True, True, True, True, True]
+        'EndPhysicalConstraintUserData', 'NavCollision', \
+        'SkeletalMeshSocket']
+    IGNORE=[True, True, True, True, True, True, True, True, True]
     #'BodySetup'
     def __init__(self, f):
         self.import_id = -read_int32(f)-1
@@ -206,17 +203,19 @@ class UassetExport: #104 bytes
         for export in exports:
             name=name_list[export.name_id]
             export.import_name = imports[export.import_id].name
+            export.name=name
 
             if name in UassetExport.KNOWN_EXPORTS:
                 export.id=UassetExport.KNOWN_EXPORTS.index(name)
                 export.ignore=UassetExport.IGNORE[export.id]
-            elif export.import_name in ['SkeletalMesh', 'StaticMesh']:
+            elif (export.import_name in ['SkeletalMesh', 'StaticMesh', 'Skeleton']):
                 export.id=-1
                 export.ignore=False
+                asset_type = export.import_name
             else:
-                logger.error('Unsupported exports. (export: {}, file: {})'.format(name, file_name))
+                raise RuntimeError('Unsupported exports. (export: {}, file: {})'.format(name, file_name))
+        return asset_type
 
-            export.name=name
 
     def read_uexp(self, f):
         self.bin=f.read(self.size)
@@ -236,7 +235,7 @@ class Uasset:
 
     def __init__(self, uasset_file):
         if uasset_file[-7:]!='.uasset':
-            logger.error('Not .uasset. ({})'.format(uasset_file))
+            raise RuntimeError('Not .uasset. ({})'.format(uasset_file))
 
         logger.log('Loading '+uasset_file+'...', ignore_verbose=True)
 
@@ -263,7 +262,7 @@ class Uasset:
         self.bin2=f.read(self.header.import_offset-offset)
 
         self.imports=read_array(f, UassetImport.read, len=self.header.import_num)
-        self.ff7r, self.skeletal=UassetImport.name_imports(self.imports, self.name_list)
+        self.ff7r = UassetImport.name_imports(self.imports, self.name_list)
         logger.log('Import')
         for import_ in self.imports:
             import_.print()
@@ -271,7 +270,7 @@ class Uasset:
         offset=f.tell()
         self.bin3=f.read(self.header.export_offset-offset)
         self.exports=read_array(f, UassetExport.read, len=self.header.export_num)
-        UassetExport.name_exports(self.exports, self.imports, self.name_list, self.file)
+        self.asset_type = UassetExport.name_exports(self.exports, self.imports, self.name_list, self.file)
 
         logger.log('Export')
         for export in self.exports:

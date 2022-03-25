@@ -62,6 +62,13 @@ class PositionVertexBuffer(VertexBuffer):
         write_uint32(f, vb.vertex_num)
         Buffer.write(f, vb)
 
+    def parse(self):
+        parsed = struct.unpack('<'+'f'*3*self.size, self.buf)
+        position = [parsed[i*3:i*3+3] for i in range(self.size)]
+        position = [[p/100 for p in pos] for pos in position]
+        position = [[pos[0], pos[2], pos[1]] for pos in position]
+        return position
+
 #Normals and UV maps for static mesh
 class StaticMeshVertexBuffer(VertexBuffer):
     def __init__(self, uv_num, use_float32, stride, size, buf, offset, name):
@@ -91,6 +98,22 @@ class StaticMeshVertexBuffer(VertexBuffer):
         write_uint32(f, vb.use_float32)
         write_null(f)
         Buffer.write(f, vb)
+
+    def parse(self):
+        uv_type = 'f'*self.use_float32+'e'*(not self.use_float32)
+        parsed = struct.unpack('<'+('B'*8+uv_type*2*self.uv_num)*self.size, self.buf)
+        stride = 8+2*self.uv_num
+        normals = [parsed[i*stride:i*stride+8] for i in range(self.size)]
+        normals = [[i*2/255-1 for i in n] for n in normals]
+        normal = [n[4:7] for n in normals]
+        normal = [[n[0], n[2], n[1]] for n in normal]
+        tangent = [n[:4] for n in normals]
+        tangent = [[n[0], n[2], n[1], n[3]] for n in tangent]
+        texcoords = []
+        for j in range(self.uv_num):
+            texcoord = [parsed[i*stride+8+j*2:i*stride+8+j*2+2] for i in range(self.size)]
+            texcoords.append(texcoord)
+        return normal, tangent, texcoords
 
 #Vertex colors
 class ColorVertexBuffer(VertexBuffer):
@@ -136,6 +159,25 @@ class SkeletalMeshVertexBuffer(VertexBuffer):
         write_null_array(f, 3)
         Buffer.write(f, vb)
 
+    def parse(self):
+        uv_type = 'f'*self.use_float32+'e'*(not self.use_float32)
+        parsed = struct.unpack('<'+('B'*8+'fff'+uv_type*2*self.uv_num)*self.size, self.buf)
+        stride = 11+2*self.uv_num
+        normals = [parsed[i*stride:i*stride+8] for i in range(self.size)]
+        normals = [[i*2/255-1 for i in n] for n in normals]
+        normal = [n[4:7] for n in normals]
+        normal = [[n[0], n[2], n[1]] for n in normal]
+        tangent = [n[:4] for n in normals]
+        tangent = [[n[0], n[2], n[1], n[3]] for n in tangent]
+        position = [parsed[i*stride+8:i*stride+11] for i in range(self.size)]
+        position = [[p/100 for p in pos] for pos in position]
+        position = [[pos[0], pos[2], pos[1]] for pos in position]
+        texcoords = []
+        for j in range(self.uv_num):
+            texcoord = [parsed[i*stride+11+j*2:i*stride+11+j*2+2] for i in range(self.size)]
+            texcoords.append(texcoord)
+        return normal, tangent, position, texcoords
+
 #Skin weights for skeletal mesh
 class SkinWeightVertexBuffer(VertexBuffer):
     def __init__(self, extra_bone_flag, stride, size, buf, offset, name):
@@ -158,6 +200,18 @@ class SkinWeightVertexBuffer(VertexBuffer):
         write_uint32(f, vb.vertex_num)
         Buffer.write(f, vb)
 
+    def parse(self):
+        parsed = struct.unpack('<'+'B'*len(self.buf), self.buf)
+        joint = [parsed[i*self.stride:i*self.stride+4] for i in range(self.size)]
+        weight = [parsed[i*self.stride+self.stride//2:i*self.stride+self.stride//2+4] for i in range(self.size)]
+        if self.extra_bone_flag:
+            joint2 = [parsed[i*self.stride+4:i*self.stride+8] for i in range(self.size)]
+            weight2 = [parsed[i*self.stride+self.stride//2+4:i*self.stride+self.stride//2+8] for i in range(self.size)]
+        else:
+            joint2=None
+            weight2=None
+        return joint, weight, joint2, weight2
+
 #Index buffer for static mesh
 class StaticIndexBuffer(Buffer):
     def __init__(self, uint32_flag, stride, size, ib, offset, name):
@@ -178,6 +232,12 @@ class StaticIndexBuffer(Buffer):
         size = len(self.buf)//stride
         return self.offset, stride, size
 
+    def parse(self):
+        _, stride, size = self.get_meta()
+        form = [None, None, 'H', None, 'I']
+        indices = struct.unpack('<'+form[stride]*size, self.buf)
+        return indices
+
 #Index buffer for skeletal mesh
 class SkeletalIndexBuffer(Buffer):
     def read(f, name=''):
@@ -189,6 +249,11 @@ class SkeletalIndexBuffer(Buffer):
     def write(f, ib):
         write_uint8(f, ib.stride)
         Buffer.write(f, ib)
+
+    def parse(self):
+        form = [None, None, 'H', None, 'I']
+        indices = struct.unpack('<'+form[self.stride]*self.size, self.buf)
+        return indices
 
 #KDI buffers
 class KDIBuffer(Buffer):
