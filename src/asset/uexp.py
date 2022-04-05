@@ -97,7 +97,7 @@ class MeshUexp:
                         f.write(self.unknown2)
                         size=f.tell()-offset
 
-                export.update(size, offset+self.uasset.size)
+                export.update(size, offset)
 
             f.write(self.meta)
             f.write(self.foot)
@@ -118,7 +118,7 @@ class MeshUexp:
         if self.asset_type!=mesh_uexp.asset_type and self.asset_type!='Skeleton':
             raise RuntimeError('Asset types are not the same. ({}, {})'.format(self.asset_type, mesh_uexp.asset_type))
         if self.asset_type=='SkeletalMesh':
-            self.mesh.import_LODs(mesh_uexp.mesh, only_mesh=only_mesh,
+            self.mesh.import_LODs(mesh_uexp.mesh, self.name_list, only_mesh=only_mesh,
                                           only_phy_bones=only_phy_bones, dont_remove_KDI=dont_remove_KDI,
                                           ignore_material_names=ignore_material_names)
         elif self.asset_type=='StaticMesh':

@@ -174,20 +174,20 @@ class SkeletalMesh(Mesh):
         write_array(f, skeletalmesh.LODs, SkeletalLOD.write, with_length=True)
         write_array(f, skeletalmesh.phy_mesh, PhysicalMesh.write, with_length=True)
 
-    def import_LODs(self, skeletalmesh, only_mesh=False, only_phy_bones=False,
+    def import_LODs(self, skeletalmesh, name_list, only_mesh=False, only_phy_bones=False,
                     dont_remove_KDI=False, ignore_material_names=False):
         if not self.ff7r:
             raise RuntimeError("The file should be an FF7R's asset!")
 
         bone_diff=len(self.skeleton.bones)-len(skeletalmesh.skeleton.bones)
-        if bone_diff!=0:
+        if (only_mesh or only_phy_bones) and bone_diff!=0:
             msg = 'Skeletons are not the same.'
             if bone_diff==-1:
                 msg+=' Maybe UE4 added an extra bone as a root bone.'
             raise RuntimeError(msg)
 
         if not only_mesh:
-            self.skeleton.import_bones(skeletalmesh.skeleton.bones, only_phy_bones=only_phy_bones)
+            self.skeleton.import_bones(skeletalmesh.skeleton.bones, name_list, only_phy_bones=only_phy_bones)
 
         super().import_LODs(skeletalmesh, ignore_material_names=ignore_material_names)
 

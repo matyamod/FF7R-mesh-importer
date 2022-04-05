@@ -16,7 +16,7 @@ FILE HEADER
   uint32 {4}       - Exports Directory Offset
   uint32 {4}       - Number Of Imports
   uint32 {4}       - Import Directory Offset
-  uint32 {4}       - ?
+  uint32 {4}       - Offset to End of Exports
   byte {16}        - null
   byte {16}        - GUID Hash
   uint32 {4}       - Unknown (1)
@@ -25,10 +25,10 @@ FILE HEADER
   byte {36}        - null
   uint32 {4}       - Unknown
   uint32 {4}       - null
-  uint32 {4}       - Padding Offset
+  uint32 {4}       - Padding Offset (Files Data Offset - 4)
   uint32 {4}       - File Length [+4] (not always - sometimes an unknown length/offset)
   byte {12}        - null
-  uint32 {4}       - Unknown (-1)
+  uint32 {4}       - Files Data Count
   uint32 {4}       - Files Data Offset
 '''
 
@@ -56,26 +56,39 @@ class UassetHeader:
         self.export_offset = read_uint32(f)
         self.import_num = read_uint32(f)
         self.import_offset = read_uint32(f)
-        self.unk1=f.read(4)
+        self.end_to_export=read_uint32(f)
         read_null_array(f, 4, 'Parse Failed.')
 
         self.guid_hash=f.read(16)
 
-        self.unk2=f.read(8)
+        #self.unk2=read_uint32(f)
+        read_const_uint32(f, 1)
+
+        self.padding_num=read_uint32(f)
 
         name_num=read_uint32(f)
         check(name_num, self.name_num, f, 'Parse Failed.')
         read_null_array(f, 9, 'Parse Failed.')
-        self.unk3=f.read(4)
+        self.unk_ary2=read_uint8_array(f, len=4)
         read_null(f, 'Parse Failed.')
         self.padding_offset = read_uint32(f)
         self.file_length=read_uint32(f)
         read_null_array(f, 3, 'Parse Failed.')
-        self.unk4=f.read(4)
+        self.file_data_count=read_uint32(f)
         self.file_data_offset = read_uint32(f)
 
     def read(f):
         return UassetHeader(f)
+
+    def update(self, name_offset, name_num, import_offset, export_offset, padding_offset, file_data_offset, uasset_size, file_length):
+        self.name_offset = name_offset
+        self.name_num = name_num
+        self.import_offset = import_offset
+        self.export_offset = export_offset
+        self.padding_offset = padding_offset
+        self.file_data_offset = file_data_offset
+        self.file_length = file_length
+        self.file_size  = uasset_size
     
     def write(f, header):
         f.write(UassetHeader.HEAD)
@@ -91,18 +104,21 @@ class UassetHeader:
         write_uint32(f, header.export_offset)
         write_uint32(f, header.import_num)
         write_uint32(f, header.import_offset)
-        f.write(header.unk1)
+        write_uint32(f, header.end_to_export)
         write_null_array(f, 4)
         f.write(header.guid_hash)
-        f.write(header.unk2)
+        #write_uint32(f, header.unk2)
+        write_uint32(f, 1)
+
+        write_uint32(f, header.padding_num)
         write_uint32(f, header.name_num)
         write_null_array(f, 9)
-        f.write(header.unk3)
+        write_uint8_array(f, header.unk_ary2)
         write_null(f)
         write_uint32(f, header.padding_offset)
         write_uint32(f, header.file_length)
         write_null_array(f, 3)
-        f.write(header.unk4)
+        write_uint32(f, header.file_data_count)
         write_uint32(f, header.file_data_offset)
 
     def print(self):
@@ -115,9 +131,11 @@ class UassetHeader:
         logger.log('  export directory offset: {}'.format(self.export_offset))
         logger.log('  number of imports: {}'.format(self.import_num))
         logger.log('  import directory offset: {}'.format(self.import_offset))
+        logger.log('  end offset of export: {}'.format(self.end_to_export))
         logger.log('  guid hash: {}'.format(self.guid_hash))
         logger.log('  padding offset: {}'.format(self.padding_offset))
         logger.log('  file length (uasset+uexp-4): {}'.format(self.file_length))
+        logger.log('  file data count: {}'.format(self.file_data_count))
         logger.log('  file data offset: {}'.format(self.file_data_offset))
 
 class UassetImport: #28 bytes
@@ -243,7 +261,6 @@ class Uasset:
         f=open(uasset_file, 'rb')
         self.size=get_size(f)
         self.header=UassetHeader.read(f)
-        self.bin1 = f.read(self.header.name_offset-193)
         logger.log('size: {}'.format(self.size))
         self.header.print()
         
@@ -258,8 +275,6 @@ class Uasset:
             logger.log('  {}: {}'.format(i, name))
             self.name_list.append(name)
             self.flag_list.append(flag)
-        offset=f.tell()
-        self.bin2=f.read(self.header.import_offset-offset)
 
         self.imports=read_array(f, UassetImport.read, len=self.header.import_num)
         self.ff7r = UassetImport.name_imports(self.imports, self.name_list)
@@ -267,8 +282,6 @@ class Uasset:
         for import_ in self.imports:
             import_.print()
 
-        offset=f.tell()
-        self.bin3=f.read(self.header.export_offset-offset)
         self.exports=read_array(f, UassetExport.read, len=self.header.export_num)
         self.asset_type = UassetExport.name_exports(self.exports, self.imports, self.name_list, self.file)
 
@@ -276,21 +289,49 @@ class Uasset:
         for export in self.exports:
             export.print()
 
-        self.bin4=f.read()
+        read_null_array(f, self.header.padding_num)
+        check(self.header.padding_offset, f.tell())
+        read_null(f)
+        check(self.header.file_data_offset, f.tell())
+        self.file_data_ids = read_int32_array(f, len=self.header.file_data_count)
+        '''
+        for i in self.file_data_ids:
+            if i<0:
+                i = -i-1
+                print(self.imports[i].name)
+            else:
+                print(self.name_list[i])
+        '''
+        check(f.tell(), self.size)
+
         f.close()
     
     def save(self, file, uexp_size):
-        self.header.file_length=uexp_size+self.size-4
         logger.log('Saving '+file+'...', ignore_verbose=True)
         with open(file, 'wb') as f:
             UassetHeader.write(f, self.header)
-            f.write(self.bin1)
+            name_offset = f.tell()
             for name, flag in zip(self.name_list, self.flag_list):
                 write_str(f, name)
-                f.write(flag)
+                if flag is None:
+                    f.write(b'\x00'*4)
+                else:
+                    f.write(flag)
 
-            f.write(self.bin2)
+            import_offset = f.tell()
             write_array(f, self.imports, UassetImport.write)                
-            f.write(self.bin3)
+            export_offset = f.tell()
             write_array(f, self.exports, UassetExport.write)
-            f.write(self.bin4)
+            write_null_array(f, self.header.padding_num+1)
+            padding_offset = f.tell()-4
+            file_data_offset = f.tell()
+            write_int32_array(f, self.file_data_ids)
+            uasset_size = f.tell()
+            file_length=uexp_size+uasset_size-4
+            self.header.update(name_offset, len(self.name_list), import_offset, export_offset, padding_offset, file_data_offset, uasset_size, file_length)
+            f.seek(0)
+            UassetHeader.write(f, self.header)
+            f.seek(export_offset)
+            for export in self.exports:
+                export.update(export.size, export.offset+uasset_size)
+            write_array(f, self.exports, UassetExport.write)

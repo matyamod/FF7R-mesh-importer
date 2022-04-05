@@ -10,17 +10,20 @@ class Bone:
     #pos: position
     #size: size
 
-    def __init__(self, f):
-        self.name_id=read_uint32(f)
-        self.instance = read_int32(f) #null?
-        self.parent = read_int32(f)
+    def __init__(self, name_id, instance, parent):
+        self.name_id = name_id
+        self.instance = instance
+        self.parent = parent
         self.pos = None
         self.name = None
         self.parent_name = None
         self.children = []
 
     def read(f):
-        return Bone(f)
+        name_id=read_uint32(f)
+        instance = read_int32(f) #null?
+        parent = read_int32(f)
+        return Bone(name_id, instance, parent)
 
     def read_pos(self, f):
         #self.pos=read_float32_array(f, len=10)
@@ -33,10 +36,25 @@ class Bone:
 
     def write_pos(f, bone):
         #write_float32_array(f, bone.pos)
+        #if bone.name=='Trans':
+        #    print('rescaled Trans bone')
+        #    ary = list(struct.unpack('<'+'f'*10, bone.pos))
+        #    ary[7:]=[0.5]*3
+        #    bone.pos = struct.pack('<'+'f'*10, *ary)
         f.write(bone.pos)
 
     def update(self, bone):
         self.pos=bone.pos
+        self.name = bone.name
+        self.instance = bone.instance
+        self.parent = bone.parent
+
+    def update_name_id(self, name_list):
+        if self.name_id>=0:
+            name_list[self.name_id]=self.name
+        else:
+            self.name_id=len(name_list)
+            name_list.append(self.name)
 
     def name_bone(self, name, parent_name):
         self.name=name
@@ -104,7 +122,14 @@ class Skeleton:
         for b in self.bones:
             b.read_pos(f)
 
-        self.name_to_index_map=read_array(f, Bone.read)
+
+        read_const_uint32(f, len(self.bones))
+        for b, i in zip(self.bones, range(len(self.bones))):
+            read_const_uint32(f, b.name_id)
+            read_null(f)
+            read_const_uint32(f, i)
+
+        #self.name_to_index_map=read_array(f, Bone.read)
 
     def read(f):
         return Skeleton(f)
@@ -112,24 +137,36 @@ class Skeleton:
     def write(f, skeleton):
         write_array(f, skeleton.bones, Bone.write, with_length=True)
         write_array(f, skeleton.bones, Bone.write_pos, with_length=True)
-        write_array(f, skeleton.name_to_index_map, Bone.write, with_length=True)
+        write_uint32(f, len(skeleton.bones))
+        for b, i in zip(skeleton.bones, range(len(skeleton.bones))):
+            write_uint32(f, b.name_id)
+            write_null(f)
+            write_uint32(f, i)
 
     def name_bones(self, name_list):
         Bone.name_bones(self.bones, name_list)
 
-    def import_bones(self, bones, only_phy_bones=False):
+    def import_bones(self, bones, name_list, only_phy_bones=False):
+        
         for self_bone, new_bone in zip(self.bones, bones):
             #if self_bone.name!=new_bone.name:
             #    raise RuntimeError("")
             #print('{} -> {}'.format(self_bone.pos[4:7], new_bone.pos[4:7]))
-            if only_phy_bones and 'Phy' not in self_bone.name:
+            if only_phy_bones and 'Phy' not in new_bone.name:
                 continue
+            if self_bone is None:
+                self_bone = Bone(-1, None, None)
+                self.bones.append(self_bone)
             self_bone.update(new_bone)
+        self.bones = self.bones[:len(bones)]
         if only_phy_bones:
             #logger.log('Imported bones: {}'.format(bone_list))
             logger.log('Phy bones have been imported.', ignore_verbose=True)
         else:
             logger.log('Bone positions and rotations have been imported.', ignore_verbose=True)
+
+        for bone in self.bones:
+            bone.update_name_id(name_list)
 
     def print(self, padding=0):
         pad=' '*padding
@@ -168,7 +205,12 @@ class SkeletonAsset:
         for b in self.bones:
             b.read_pos(f)
 
-        self.name_to_index_map=read_array(f, Bone.read)
+        for b in self.bones:
+            read_const_uint32(f, b.name_id)
+            read_null
+            read_const_uint32(f, b.name_id)
+
+        #self.name_to_index_map=read_array(f, Bone.read)
 
         self.name_bones(name_list)
         self.print()
