@@ -34,7 +34,6 @@ jobs:
           cp ./changelog.txt ../release/exe
           cp ./LICENSE ../release/exe
           cp ./README.md ../release/exe
-          cp -r ./BlenderExportScript ../release/exe/
           
           cp -r ../release/exe ../release/python
           
@@ -43,65 +42,22 @@ jobs:
           cp -r ./bat-python ../release/python
           mv ../release/python/bat-python ../release/python/bat
           
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.8'
-          architecture: 'x64'
-          
-      - name: Cache Pip
-        id: pip_cache
-        uses: actions/cache@v2
-        with:
-          path: ${{ env.pythonLocation }}
-          key: windows-pyinstall-${{ hashFiles('**/README.md') }}
-          restore-keys: windows-pyinstall-
-
-
       - name: Install python libs
         if: steps.pip_cache.outputs.cache-hit != 'true'
         run: | 
           python -V
           pip install wheel
-         
-      - name: Set up MinGW
-        if: steps.pip_cache.outputs.cache-hit != 'true'
-        uses: egor-tensin/setup-mingw@v2
-        with:
-          platform: x64
-
-      - name: Clone pyinstaller repository
-        if: steps.pip_cache.outputs.cache-hit != 'true'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          cd $HOME
-          git clone https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/pyinstaller/pyinstaller.git
-        shell: bash
-
-      - name: Build pyinstaller
-        if: steps.pip_cache.outputs.cache-hit != 'true'
-        run: |
-          cd $HOME/pyinstaller/bootloader
-          python ./waf all
-        shell: bash
-          
-      - name: Install pyinstaller
-        if: steps.pip_cache.outputs.cache-hit != 'true'
-        run: |
-          cd $HOME/pyinstaller
-          python setup.py install
-        shell: bash
-
+          pip install nuitka zstandard
+      
       - name: Build Python
         run: |
-          pyinstaller src/${{ env.MAIN_PYTHON_FILE }}.py --onefile
+          nuitka --assume-yes-for-downloads --follow-imports --onefile src/${{ env.MAIN_PYTHON_FILE }}.py
           
       - name: Copy files
         run: |
           mkdir -p ../release/exe/src
-          cp ./dist/${{ env.MAIN_PYTHON_FILE }}.exe ../release/exe/src
-          rm -rf __pycache__ build dist main.spec
+          cp ${{ env.MAIN_PYTHON_FILE }}.dist/${{ env.MAIN_PYTHON_FILE }}.exe ../release/exe/src
+          cp ${{ env.MAIN_PYTHON_FILE }}.dist/python*.dll ../release/exe/src
         shell: bash
         
       - name: Setup dotnet

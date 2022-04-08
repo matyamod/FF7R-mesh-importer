@@ -4,6 +4,7 @@
 *buffers
 *KDIremoved
 *LODremoved
+*log
 *log.txt
 !changelog.txt
 *.sh

@@ -1,8 +1,14 @@
 ![build](https://github.com/matyalatte/FF7R-mesh-importer/actions/workflows/build.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-# FF7R-mesh-importer ver0.1.5
-A tool for importing skeletal meshes into uassets extracted from FF7R
+# FF7R-mesh-importer ver0.2.1
+A tool for importing meshes into uassets extracted from FF7R
+
+## Features
+
+- Inject mesh assets
+- Export mesh assets as glTF
+- Dump buffers
 
 ## Notes
 
@@ -13,8 +19,8 @@ A tool for importing skeletal meshes into uassets extracted from FF7R
 
 ## Supported Assets
 
-- Character assets
-- Weapon assets except `WE90**`
+- All skeletal mesh assets
+- All static mesh assets
 
 ## Requirements
 
@@ -27,6 +33,7 @@ A tool for importing skeletal meshes into uassets extracted from FF7R
 - UE4.18.3
 - Blender(>=2.8)
 - Psk plugin (I recommend using [my customized version](https://github.com/matyalatte/blender3d_import_psk_psa))
+- [glTF plugin](https://github.com/KhronosGroup/glTF-Blender-IO)
 - Pack tool (e.g. u4pak)
 
 ## Download
@@ -35,38 +42,22 @@ Download `FF7R-MeshImporter*.zip` from [here](https://github.com/matyalatte/FF7R
 - `FF7R-MeshImporter-exe*.zip` is for non-Python users.
 - `FF7R-MeshImporter-python*.zip` is for Python users.
 
-## Script Usage
+## Credits
+- A special thanks to Narknon for the GUI implementation and much discussion.
+- A special thanks to TerryXXX for the tutorial, much discussion, and doing many tests.
+- Thanks to Jordan Tucker for the data map.
+- Thanks to JujuB, Amiibolad, and Altezein for the testing.
 
-```
-#for non-Python users
-main.exe ff7r_file [ue4_18_file] save_folder [--mode=mode] [options]
-
-#for Python users
-python main.py ff7r_file [ue4_18_file] save_folder [--mode=mode] [options]
-```
-
-- `ff7r_file`: .uexp file extracted from FF7R
-- `ue4_18_file`: .uexp file exported from UE4.18
-- `save_folder`: New uasset files will be generated here.
-- `mode`: The following modes are available.
-   - `import`: Imports LODs and bones. Default mode. This mode has some bugs. Please use with `--only_mesh` option.
-   - `dumpBuffers`: Dumps buffers LODs have.
-   - `valid`: Checks if the script can parse or not.
-- `--verbose`: Shows log.
-- `--only_mesh`: Does not import bones.
-- `--dont_remove_KDI`: Does not remove KDI buffers.
-- `--author=*`: You can embed a string into a weight buffer.
+## Command Line Usage
+You can use our tool with the Command-line.<br>
+See here for the details.<br>
+[Command Line Usage · matyalatte/FF7R-mesh-importer Wiki](https://github.com/matyalatte/FF7R-mesh-importer/wiki/Command-Line-Usage)
 
 ## How to Build
 You can build our tool with Github Actions.<br>
-See [How-to-build.md](How-to-build.md) for the details.<br>
+See here for the details.<br>
+[How to Build with Github Actions · matyalatte/FF7R-mesh-importer Wiki](https://github.com/matyalatte/FF7R-mesh-importer/wiki/How-to-Build-with-Github-Actions)
 
-## Q&A
+## FAQ
+[FAQ · matyalatte/FF7R-mesh-importer Wiki](https://github.com/matyalatte/FF7R-mesh-importer/wiki/FAQ)
 
-### Is the .exe file malware? My antivirus reports it as containing virus.
-No, it is a false positive caused by pyinstaller.<br>
-<br>
-[AVG (and other antiviruses) reports exe file as containing virus · Issue #603 · pyinstaller/pyinstaller](https://github.com/pyinstaller/pyinstaller/issues/603)<br>
-<br>
-I recompiled the bootloader of pyinstaller to reduce false positives, but it will not completely solve the issue.<br>
-<br>

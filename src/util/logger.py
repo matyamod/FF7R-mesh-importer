@@ -1,4 +1,4 @@
-import time, os
+import time, os, traceback
 
 class Logger:
     LOG_FOLDER='log'
@@ -19,14 +19,13 @@ class Logger:
         if self.verbose or ignore_verbose:
             print(string)
 
-    def error(self, string):
-        self.log('Error: {}'.format(string))
+    def error(self):
+        self.log(traceback.format_exc()[:-1])
         self.close()
         file_path=os.path.join(Logger.LOG_FOLDER, self.file_name)
         self.file_name = 'error-'+self.file_name
         err_file_path=os.path.join(Logger.LOG_FOLDER, self.file_name)
         os.rename(file_path, err_file_path)
-        raise RuntimeError(string)
 
 class Timer:
     def __init__(self):
