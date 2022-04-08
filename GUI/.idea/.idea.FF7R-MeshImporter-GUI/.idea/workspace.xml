@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RunManager">
+    <configuration name="FF7R-MeshImporter-GUI: Portable" type="DotNetMsBuildPublish" factoryName="Publish to IIS">
+      <riderPublish publish_profile="Portable.pubxml" pubxml_path="$PROJECT_DIR$/FF7R-MeshImporter-GUI/Properties/PublishProfiles/Portable.pubxml" uuid_high="3596646833203790475" uuid_low="-6662208537644522719" />
+      <method v="2" />
+    </configuration>
+    <configuration name="FF7R-MeshImporter-GUI: SelfContained" type="DotNetMsBuildPublish" factoryName="Publish to IIS">
+      <riderPublish publish_profile="SelfContained.pubxml" pubxml_path="$PROJECT_DIR$/FF7R-MeshImporter-GUI/Properties/PublishProfiles/SelfContained.pubxml" uuid_high="3596646833203790475" uuid_low="-6662208537644522719" />
+      <method v="2" />
+    </configuration>
+    <configuration name="FF7R-MeshImporter-GUI: winx64" type="DotNetMsBuildPublish" factoryName="Publish to IIS">
+      <riderPublish publish_profile="winx64.pubxml" pubxml_path="$PROJECT_DIR$/FF7R-MeshImporter-GUI/Properties/PublishProfiles/winx64.pubxml" uuid_high="3596646833203790475" uuid_low="-6662208537644522719" />
+      <method v="2" />
+    </configuration>
+  </component>
+</project>
