@@ -1,4 +1,4 @@
-import os, json
+import os, json, struct
 from util.io_util import *
 from util.logger import logger
 
@@ -66,7 +66,7 @@ class Mesh:
             import_id=-read_int32(f)-1
             if imports[import_id].material:
                 break
-            f.seek(4,1)
+            print(imports[import_id].name)
             buf=f.read(3)
         return
 
@@ -159,12 +159,18 @@ class SkeletalMesh(Mesh):
             LODs.append(lod)
 
         #mesh data?
-        num=read_uint32(f)
-        phy_mesh=[]
-        for i in range(num):
-            mesh=PhysicalMesh.read(f)
-            phy_mesh.append(mesh)
-            mesh.print()
+        if ff7r:
+            read_const_uint32(f, 1)
+            phy_mesh=PhysicalMesh.read(f, skeleton.bones)
+            phy_mesh.print()
+            #num=read_uint32(f)
+            #phy_mesh=[]
+            #for i in range(num):
+                #mesh=PhysicalMesh.read(f)
+                #phy_mesh.append(mesh)
+                #mesh.print()
+        else:
+            phy_mesh=None
         return SkeletalMesh(ff7r, unk, materials, skeleton, LODs, phy_mesh)
 
     def write(f, skeletalmesh):
@@ -172,7 +178,9 @@ class SkeletalMesh(Mesh):
         write_array(f, skeletalmesh.materials, SkeletalMaterial.write, with_length=True)
         Skeleton.write(f, skeletalmesh.skeleton)
         write_array(f, skeletalmesh.LODs, SkeletalLOD.write, with_length=True)
-        write_array(f, skeletalmesh.phy_mesh, PhysicalMesh.write, with_length=True)
+        if skeletalmesh.ff7r:
+            write_uint32(f, 1)
+            PhysicalMesh.write(f, skeletalmesh.phy_mesh)
 
     def import_LODs(self, skeletalmesh, name_list, only_mesh=False, only_phy_bones=False,
                     dont_remove_KDI=False, ignore_material_names=False):
@@ -188,6 +196,7 @@ class SkeletalMesh(Mesh):
 
         if not only_mesh:
             self.skeleton.import_bones(skeletalmesh.skeleton.bones, name_list, only_phy_bones=only_phy_bones)
+            self.phy_mesh.update_bone_ids(self.skeleton.bones)
 
         super().import_LODs(skeletalmesh, ignore_material_names=ignore_material_names)
 
@@ -218,27 +227,53 @@ class PhysicalMesh:
     #bone_id: vertex group? each vertex has a bone id.
     #faces
 
-    def __init__(self, f):
+    def __init__(self, f, bones):
         self.offset=f.tell()
+        self.names = [b.name for b in bones]
         vertex_num=read_uint32(f)
         self.vb=f.read(vertex_num*12)
 
         num = read_uint32(f)
-        check(num, vertex_num, f, 'Parse failed! (StaticMesh:vertex_num)')
+        check(num, vertex_num, f, 'Parse failed! (PhysicalMesh:vertex_num)')
         
-        self.weight_buffer=f.read(num*12)
+        self.weight_buffer=list(struct.unpack('<'+'HHHHBBBB'*num, f.read(num*12)))
+        #for i in range(len(self.weight_buffer)//8):
+        #    id = self.weight_buffer[i*8]
+        #   if id>0:
+        #       print(id)
+        #       print(bones[id].name)
 
         face_num=read_uint32(f)
         self.ib=f.read(face_num*6)
 
-    def read(f):
-        return PhysicalMesh(f)
+    def update_bone_ids(self, new_bones):
+        new_bone_names = [b.name for b in new_bones]
+        id_map = [0]*len(self.names)
+        for name, i in zip(self.names, range(len(self.names))):
+            if name not in new_bone_names:
+                raise RuntimeError("You can not remove existing bones. ({})".format(name))
+            id_map[i]=new_bone_names.index(name)
+        ids = [self.weight_buffer[i*8:i*8+8] for i in range(len(self.vb)//12)]
+        def update(ids):
+            for i in range(4):
+                ids[i]=id_map[ids[i]]
+                if ids[i+4]==0:
+                    break
+            return ids
+        ids = [update(i) for i in ids]
+        self.weight_buffer=[x for row in ids for x in row]
+
+    def read(f, bones):
+        return PhysicalMesh(f, bones)
 
     def write(f, mesh):
-        write_uint32(f, len(mesh.vb)//12)
+        vertex_num = len(mesh.vb)//12
+        write_uint32(f, vertex_num)
         f.write(mesh.vb)
-        write_uint32(f, len(mesh.weight_buffer)//12)
-        f.write(mesh.weight_buffer)
+        write_uint32(f, vertex_num)
+        f.write(struct.pack('<'+'HHHHBBBB'*vertex_num, *mesh.weight_buffer))
+
+        #f.write(mesh.weight_buffer)
         write_uint32(f, len(mesh.ib)//6)
         f.write(mesh.ib)
 

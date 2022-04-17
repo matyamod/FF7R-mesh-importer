@@ -294,14 +294,14 @@ class Uasset:
         read_null(f)
         check(self.header.file_data_offset, f.tell())
         self.file_data_ids = read_int32_array(f, len=self.header.file_data_count)
-        '''
+        
         for i in self.file_data_ids:
             if i<0:
                 i = -i-1
                 print(self.imports[i].name)
             else:
                 print(self.name_list[i])
-        '''
+        
         check(f.tell(), self.size)
 
         f.close()
@@ -311,12 +311,11 @@ class Uasset:
         with open(file, 'wb') as f:
             UassetHeader.write(f, self.header)
             name_offset = f.tell()
+            if len(self.name_list)>len(self.flag_list):
+                self.flag_list += [b'\x00'*4]*(len(self.name_list)-len(self.flag_list))
             for name, flag in zip(self.name_list, self.flag_list):
                 write_str(f, name)
-                if flag is None:
-                    f.write(b'\x00'*4)
-                else:
-                    f.write(flag)
+                f.write(flag)
 
             import_offset = f.tell()
             write_array(f, self.imports, UassetImport.write)                

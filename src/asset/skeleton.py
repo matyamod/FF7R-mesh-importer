@@ -147,16 +147,14 @@ class Skeleton:
         Bone.name_bones(self.bones, name_list)
 
     def import_bones(self, bones, name_list, only_phy_bones=False):
-        
+        if len(self.bones)<len(bones):
+            self.bones += [Bone(-1, None, None) for i in range(len(bones)-len(self.bones))]
         for self_bone, new_bone in zip(self.bones, bones):
             #if self_bone.name!=new_bone.name:
             #    raise RuntimeError("")
             #print('{} -> {}'.format(self_bone.pos[4:7], new_bone.pos[4:7]))
             if only_phy_bones and 'Phy' not in new_bone.name:
                 continue
-            if self_bone is None:
-                self_bone = Bone(-1, None, None)
-                self.bones.append(self_bone)
             self_bone.update(new_bone)
         self.bones = self.bones[:len(bones)]
         if only_phy_bones:
