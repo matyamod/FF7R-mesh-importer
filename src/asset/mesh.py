@@ -1,4 +1,4 @@
-import os, json, struct
+import os, json, struct, io
 from util.io_util import *
 from util.logger import logger
 
@@ -54,7 +54,7 @@ class Mesh:
         with open(file, 'w') as f:
             json.dump(logs, f, indent=4)
 
-    def seek_materials(f, imports):
+    def seek_materials(f, imports, seek_import=False):
         offset=f.tell()
         buf=f.read(3)
         while (True):
@@ -64,7 +64,7 @@ class Mesh:
                     raise RuntimeError('Material properties not found. This is an unexpected error.')
             f.seek(-4,1)
             import_id=-read_int32(f)-1
-            if imports[import_id].material:
+            if imports[import_id].material or seek_import:
                 break
             print(imports[import_id].name)
             buf=f.read(3)
@@ -135,6 +135,7 @@ class SkeletalMesh(Mesh):
         
     def read(f, ff7r, name_list, imports):
         offset=f.tell()
+
         Mesh.seek_materials(f, imports)
         f.seek(-8,1)
         unk_size=f.tell()-offset
@@ -160,9 +161,12 @@ class SkeletalMesh(Mesh):
 
         #mesh data?
         if ff7r:
-            read_const_uint32(f, 1)
-            phy_mesh=PhysicalMesh.read(f, skeleton.bones)
-            phy_mesh.print()
+            has_phy = read_uint32(f)
+            if has_phy:
+                phy_mesh=PhysicalMesh.read(f, skeleton.bones)
+                phy_mesh.print()
+            else:
+                phy_mesh=None
             #num=read_uint32(f)
             #phy_mesh=[]
             #for i in range(num):
@@ -179,10 +183,14 @@ class SkeletalMesh(Mesh):
         Skeleton.write(f, skeletalmesh.skeleton)
         write_array(f, skeletalmesh.LODs, SkeletalLOD.write, with_length=True)
         if skeletalmesh.ff7r:
-            write_uint32(f, 1)
-            PhysicalMesh.write(f, skeletalmesh.phy_mesh)
+            if skeletalmesh.phy_mesh is not None:
+                write_uint32(f, 1)
+                PhysicalMesh.write(f, skeletalmesh.phy_mesh)
+            else:
+                write_uint32(f, 0)
 
-    def import_LODs(self, skeletalmesh, name_list, only_mesh=False, only_phy_bones=False,
+
+    def import_LODs(self, skeletalmesh, imports, name_list, file_data_ids, only_mesh=False, only_phy_bones=False,
                     dont_remove_KDI=False, ignore_material_names=False):
         if not self.ff7r:
             raise RuntimeError("The file should be an FF7R's asset!")
@@ -196,7 +204,14 @@ class SkeletalMesh(Mesh):
 
         if not only_mesh:
             self.skeleton.import_bones(skeletalmesh.skeleton.bones, name_list, only_phy_bones=only_phy_bones)
-            self.phy_mesh.update_bone_ids(self.skeleton.bones)
+            if self.phy_mesh is not None:
+                self.phy_mesh.update_bone_ids(self.skeleton.bones)
+
+        if ignore_material_names and len(self.materials)<len(skeletalmesh.materials):
+            added_num = len(skeletalmesh.materials)-len(self.materials)
+            for i in range(added_num):
+                self.add_material_slot(imports, name_list, file_data_ids, skeletalmesh.materials[len(self.materials)])
+            logger.log('Added {} materials.'.format(added_num), ignore_verbose=True)
 
         super().import_LODs(skeletalmesh, ignore_material_names=ignore_material_names)
 
@@ -220,7 +235,74 @@ class SkeletalMesh(Mesh):
         normals, tangents, positions, texcoords, joints, weights, joints2, weights2, indices = self.LODs[0].parse_buffers_for_gltf()
         gltf.set_parsed_buffers(normals, tangents, positions, texcoords, joints, weights, joints2, weights2, indices)
         gltf.save(name, save_folder)
-        
+
+    def add_material_slot(self, imports, name_list, file_data_ids, material = None):
+        if material is None:
+            slot_name = 'new_material_slot_name'
+            import_name = 'new_material_name'
+        else:
+            slot_name = material.slot_name
+            import_name = material.import_name
+
+        #add material slot
+        bin = self.materials[-1].bin
+        import_id = self.materials[-1].import_id
+        self.materials.append(SkeletalMaterial(-len(imports)-1, len(name_list), bin))
+        name_list.append(slot_name)
+        file_data_ids.append(-len(imports)-1)
+
+        #add import for material
+        sample_material_import = imports[-import_id-1]
+        new_material_import = sample_material_import.copy()
+        imports.append(new_material_import)
+        new_material_import.parent_import_id = -len(imports)-1
+        new_material_import.name_id = len(name_list)
+        name_list.append(import_name)
+
+        #add import for material dir
+        sample_dir_import = imports[-sample_material_import.parent_import_id-1]
+        new_dir_import = sample_dir_import.copy()
+        imports.append(new_dir_import)
+        new_dir_import.name_id = len(name_list)
+        name_list.append('/Game/GameContents/{}_dir'.format(import_name))
+
+        #self.add_material_to_unk(imports, name_list)
+
+    '''
+    def add_material_to_unk(self, imports, name_list):
+        new_num = len(self.materials)
+        print('new_num: {}'.format(new_num))
+        with io.BytesIO(self.unk) as f:
+            Mesh.seek_materials(f, imports, seek_import=True)
+            offset = f.tell()
+            print('offset: {}'.format(offset))
+            f.seek(0)
+            bin1 = f.read(offset+15)
+            material_num  = read_uint32(f)
+            print(material_num)
+            f.seek(3*material_num, 1)
+            bin2 = f.read(8+8+17+8+4)
+            num = read_uint32(f)
+            print('num: {}'.format(num))
+            if num!=material_num:
+                num2=read_uint32(f)
+                print(num2)
+            else:
+                num2=None
+            bin3 = f.read(4*material_num)
+            bin_ = struct.unpack('<'+'I'*material_num, bin3)
+            for b in bin_:
+                print(name_list[b])
+            bin4 = f.read()
+        self.unk = b''.join([bin1, struct.pack('<I', new_num), b'800707'*new_num, bin2])
+        if num2 is None:
+            self.unk = b''.join([self.unk, struct.pack('<I', new_num), bin3])
+        else:
+            self.unk = b''.join([self.unk, struct.pack('<I', num), struct.pack('<I', new_num), bin3])
+        self.unk = b''.join([self.unk, struct.pack('<I', len(name_list) - 1), bin4])
+    '''
+
+
 #collider or something? low poly mesh.
 class PhysicalMesh:
     #vertices
@@ -251,7 +333,8 @@ class PhysicalMesh:
         id_map = [0]*len(self.names)
         for name, i in zip(self.names, range(len(self.names))):
             if name not in new_bone_names:
-                raise RuntimeError("You can not remove existing bones. ({})".format(name))
+                logger.log('Warning: Some existing bones are missing. I do not know how it affect the game.', ignore_verbose=True)
+                return
             id_map[i]=new_bone_names.index(name)
         ids = [self.weight_buffer[i*8:i*8+8] for i in range(len(self.vb)//12)]
         def update(ids):

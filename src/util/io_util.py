@@ -49,20 +49,30 @@ def read_array(file, read_func, len=None):
     ary=[read_func(file) for i in range(len)]
     return ary
 
+st_list = ['b', 'B', 'h', 'H', 'i', 'I', 'l', 'L', 'f', 'd']
+st_size = [1, 1, 2, 2, 4, 4, 8, 8, 4, 8]
+def read_num_array(file, st, len=None):
+    if st not in st_list:
+        raise RuntimeError('Structure not found. {}'.format(st))
+    if len is None:
+        len = read_uint32(file)
+    bin = file.read(st_size[st_list.index(st)]*len)
+    return list(struct.unpack(st*len, bin))
+
 def read_uint32_array(file, len=None):
-    return read_array(file, read_uint32, len=len)
+    return read_num_array(file, 'I', len=len)
 
 def read_uint16_array(file, len=None):
-    return read_array(file, read_uint16, len=len)
+    return read_num_array(file, 'H', len=len)
 
 def read_uint8_array(file, len=None):
-    return read_array(file, read_uint8, len=len)
+    return read_num_array(file, 'B', len=len)
 
 def read_int32_array(file, len=None):
-    return read_array(file, read_int32, len=len)
+    return read_num_array(file, 'i', len=len)
 
 def read_float32_array(file, len=None):
-    return read_array(file, read_float32, len=len)
+    return read_num_array(file, 'f', len=len)
 
 def read_vec3_f32(file):
     return read_float32_array(file, len=3)
@@ -91,6 +101,13 @@ def read_null(f, msg='Not NULL!'):
 def read_null_array(f, len, msg='Not NULL!'):
     null=read_uint32_array(f, len=len)
     check(null, [0]*len, f, msg)
+
+def read_struct_array(f, obj, len=None):
+    if len is None:
+        len = read_uint32(f)
+    objects = [obj() for i in range(len)]
+    list(map(lambda x: f.readinto(x), objects))
+    return objects
 
 def write_uint32(file, n):
     bin = n.to_bytes(4, byteorder="little")
@@ -164,7 +181,7 @@ def write_null_array(f, len):
 def compare(file1,file2):
     f1=open(file1, 'rb')
     f2=open(file2, 'rb')
-    logger.log('Comparing {} and {}...'.format(file1, file2), ignore_verbose=True)
+    print('Comparing {} and {}...'.format(file1, file2))
 
     f1_size=get_size(f1)
     f2_size=get_size(f2)
@@ -176,16 +193,14 @@ def compare(file1,file2):
     f1.close()
     f2.close()
 
+    if f1_size==f2_size and f1_bin==f2_bin:
+        print('Same data!')
+        return
+
     i=-1
     for b1, b2 in zip(f1_bin, f2_bin):
         i+=1
         if b1!=b2:
             break
-  
-    if i==size-1:
-        logger.log('Same data!', ignore_verbose=True)
-    else:
-        raise RuntimeError('Not same :{}'.format(i))
 
-    if f1_size!=f2_size:
-        raise RuntimeError('Not same size. ({}, {})'.format(f1_size, f2_size))
+    raise RuntimeError('Not same :{}'.format(i))

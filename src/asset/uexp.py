@@ -47,7 +47,6 @@ class MeshUexp:
         logger.log('Loading '+file+'...', ignore_verbose=True)
         #open .uexp
         with open(file, 'rb') as f:
-
             for export in self.exports:
                 if f.tell()+self.uasset.size!=export.offset:
                     raise RuntimeError('Parse failed.')
@@ -118,7 +117,8 @@ class MeshUexp:
         if self.asset_type!=mesh_uexp.asset_type and self.asset_type!='Skeleton':
             raise RuntimeError('Asset types are not the same. ({}, {})'.format(self.asset_type, mesh_uexp.asset_type))
         if self.asset_type=='SkeletalMesh':
-            self.mesh.import_LODs(mesh_uexp.mesh, self.name_list, only_mesh=only_mesh,
+            self.mesh.import_LODs(mesh_uexp.mesh, self.imports, self.name_list, self.uasset.file_data_ids,
+                                          only_mesh=only_mesh,
                                           only_phy_bones=only_phy_bones, dont_remove_KDI=dont_remove_KDI,
                                           ignore_material_names=ignore_material_names)
         elif self.asset_type=='StaticMesh':
@@ -146,3 +146,10 @@ class MeshUexp:
 
     def get_author(self):
         return self.author
+
+    def add_material_slot(self):
+        if self.asset_type!='SkeletalMesh':
+            raise RuntimeError('Unsupported feature for static mesh')
+        self.mesh.add_material_slot(self.imports, self.name_list, self.uasset.file_data_ids)
+        logger.log('Added a new material slot', ignore_verbose=True)
+

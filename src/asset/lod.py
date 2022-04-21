@@ -14,8 +14,8 @@ class LOD:
         self.color_vb = color_vb
 
     def import_LOD(self, lod, name=''):
-        if len(self.sections)<len(lod.sections):
-            raise RuntimeError('too many materials')
+        #if len(self.sections)<len(lod.sections):
+        #    raise RuntimeError('too many materials')
         f_num1=self.ib.size//3
         f_num2=lod.ib.size//3
         v_num1=self.vb.vertex_num
@@ -166,10 +166,7 @@ class SkeletalLOD(LOD):
         self.offset=f.tell()
         one = read_uint16(f)
         check(one, 1, f, 'Parse failed! (LOD:one)')
-        if ff7r:
-            self.sections=read_array(f, SkeletalLODSection.read_ff7r)
-        else:
-            self.sections=read_array(f, SkeletalLODSection.read)
+        self.sections=[SkeletalLODSection.read(f, ff7r=ff7r) for i in range(read_uint32(f))]
 
         self.KDI_buffer_size=0
         for section in self.sections:
@@ -259,6 +256,8 @@ class SkeletalLOD(LOD):
         
         super().import_LOD(lod, name=name)
         self.sections=self.sections[:len(lod.sections)]
+        if len(self.sections)<len(lod.sections):
+            self.sections += [self.sections[-1].copy() for i in range(len(lod.sections)-len(self.sections))]
         for self_section, lod_section in zip(self.sections, lod.sections):
             self_section.import_section(lod_section)
         

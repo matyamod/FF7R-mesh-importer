@@ -27,7 +27,7 @@ class Material:
         logger.log(pad+'  slot name: {}'.format(self.slot_name))
 
     def check_confliction(materials1, materials2, ignore_material_names=False):
-        if len(materials1)<len(materials2):
+        if len(materials1)<len(materials2) and not ignore_material_names:
             raise RuntimeError('Materials are too much. You can not import the mesh.')
 
         def get_range(num):
@@ -79,7 +79,7 @@ class StaticMaterial(Material):
         import_id=read_int32(f)
         slot_name_id=read_uint32(f)
         #bin=f.read(24)
-        return SkeletalMaterial(import_id, slot_name_id, None)
+        return StaticMaterial(import_id, slot_name_id, None)
 
     def write(f, material):
         f.write(b'\x00\x07')
@@ -92,10 +92,13 @@ class SkeletalMaterial(Material):
     def read(f):
         import_id=read_int32(f)
         slot_name_id=read_uint32(f)
-        bin=f.read(28)
+        bin=f.read(28) #cast shadow, uv density?
         return SkeletalMaterial(import_id, slot_name_id, bin)
 
     def write(f, material):
         write_int32(f, material.import_id)
         write_uint32(f, material.slot_name_id)
         f.write(material.bin)
+
+    def copy(self):
+        return SkeletalMaterial(self.import_id, self.slot_name_id, b''.join([self.bin]))

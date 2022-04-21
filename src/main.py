@@ -8,7 +8,7 @@ def get_args():
     parser.add_argument('ff7r_file', help='.uexp file extracted from FF7R')
     parser.add_argument('ue4_18_file', nargs='?', help='.uexp file exported from UE4.18')
     parser.add_argument('save_folder', help='New uasset files will be generated here.')
-    parser.add_argument('--mode', default='import', type=str, help="'import', 'export', 'removeLOD', 'valid', or 'dumpBuffers'")
+    parser.add_argument('--mode', default='import', type=str, help="'import', 'export', 'removeLOD', 'valid', 'dumpBuffers', or 'addMaterial'")
     parser.add_argument('--verbose', action='store_true', help='Shows log.')
     parser.add_argument('--only_mesh', action='store_true', help='Does not import bones.')
     parser.add_argument('--only_phy_bones', action='store_true', help='Does not import bones except phy bones.')
@@ -83,6 +83,14 @@ def uasset_to_uexp(file_name):
         file_name=file_name[:-6]+'uexp'
     return file_name
 
+def add_material_slot(ff7r_file, save_folder):
+    file=os.path.basename(ff7r_file)
+    new_file=os.path.join(save_folder, file)
+    mesh=MeshUexp(ff7r_file)
+    mesh.add_material_slot()
+    mesh.save(new_file)
+    return 'Success!'
+
 if __name__=='__main__':
     timer = Timer()
     args = get_args()
@@ -108,7 +116,7 @@ if __name__=='__main__':
                 raise RuntimeError('Specify uexp file.')
             msg = import_mesh(ff7r_file, ue4_18_file, save_folder, args)
         else:
-            functions = {'export': export_as_gltf, 'removeLOD': remove_LOD, 'valid': valid, 'dumpBuffers': dump_buffers}
+            functions = {'export': export_as_gltf, 'removeLOD': remove_LOD, 'valid': valid, 'dumpBuffers': dump_buffers, 'addMaterial': add_material_slot}
             if mode not in functions:
                 raise RuntimeError('Unsupported mode.')
             msg = functions[mode](ff7r_file, save_folder)

@@ -147,6 +147,7 @@ class Skeleton:
         Bone.name_bones(self.bones, name_list)
 
     def import_bones(self, bones, name_list, only_phy_bones=False):
+        old_bone_num = len(self.bones)
         if len(self.bones)<len(bones):
             self.bones += [Bone(-1, None, None) for i in range(len(bones)-len(self.bones))]
         for self_bone, new_bone in zip(self.bones, bones):
@@ -161,7 +162,7 @@ class Skeleton:
             #logger.log('Imported bones: {}'.format(bone_list))
             logger.log('Phy bones have been imported.', ignore_verbose=True)
         else:
-            logger.log('Bone positions and rotations have been imported.', ignore_verbose=True)
+            logger.log('Skeleton has been imported. (bones:{}->{})'.format(old_bone_num, len(self.bones)), ignore_verbose=True)
 
         for bone in self.bones:
             bone.update_name_id(name_list)
@@ -232,6 +233,7 @@ class SkeletonAsset:
         Bone.name_bones(self.bones, name_list)
 
     def import_bones(self, bones, only_phy_bones=False):
+        old_bone_num = len(self.bones)
         for new_bone in bones:
             name = new_bone.name
             for self_bone in self.bones:
@@ -242,7 +244,7 @@ class SkeletonAsset:
         if only_phy_bones:
             logger.log('Phy bones have been imported.', ignore_verbose=True)
         else:
-            logger.log('Bone positions and rotations have been imported.', ignore_verbose=True)
+            logger.log('Skeleton has been imported. (bones:{}->{})'.format(old_bone_num, len(self.bones)), ignore_verbose=True)
 
     def print(self, padding=0):
         pad=' '*padding

@@ -65,28 +65,42 @@ class SkeletalLODSection(LODSection):
     UNK=b'\x00\xFF\xFF'
     CorrespondClothAssetIndex=b'\xCD\xCD'
 
-    def __init__(self, f, ff7r=True):
-        self.ff7r=ff7r
+    def __init__(self, ff7r, material_id, first_ib_id, face_num, unk, \
+                first_vertex_id, vertex_group, vertex_num, max_bone_influences, \
+                unk1, unk2):
+        self.ff7r = ff7r
+        self.material_id = material_id
+        self.first_ib_id = first_ib_id
+        self.face_num = face_num
+        self.unk = unk
+        self.first_vertex_id = first_vertex_id
+        self.vertex_group = vertex_group
+        self.vertex_num = vertex_num
+        self.max_bone_influences = max_bone_influences
+        self.unk1 = unk1
+        self.unk2 = unk2  
+            
+    def read(f, ff7r=False):
         one = read_uint16(f)
         check(one, 1, f, 'Parse failed! (LOD_Section:StripFlags)')
-        self.material_id=read_uint16(f)
+        material_id=read_uint16(f)
 
-        self.first_ib_id=read_uint32(f)
+        first_ib_id=read_uint32(f)
 
-        self.face_num = read_uint32(f)
+        face_num = read_uint32(f)
         read_null(f, 'Parse failed! (LOD_Section:Number of Faces)')
         unk=f.read(3)
         check(unk, SkeletalLODSection.UNK, f, 'Parse failed! (LOD_Section:1)')
-        self.unk=f.read(1)
+        unk=f.read(1)
         read_null(f, 'Parse failed! (LOD_Section:2)')
         read_const_uint32(f, 1, 'Parse failed! (LOD_Section:3)')
-        self.first_vertex_id=read_uint32(f)
+        first_vertex_id=read_uint32(f)
 
-        self.vertex_group=read_uint16_array(f)
+        vertex_group=read_uint16_array(f)
 
-        self.vertex_num=read_uint32(f)
+        vertex_num=read_uint32(f)
 
-        self.max_bone_influences=read_uint32(f)
+        max_bone_influences=read_uint32(f)
 
         read_null_array(f, 3, 'Parse failed! (LOD_Section:4)')
         cloth_asset_index=f.read(2)
@@ -96,19 +110,21 @@ class SkeletalLODSection(LODSection):
         check(unknown, -1, f, 'LOD_Section:ClothingSectionData: AssetLodIndex should be -1.')
 
         if ff7r:
-            self.unk1=read_uint32(f)
+            unk1=read_uint32(f)
             num=read_uint32(f)
-            self.unk2=read_uint8_array(f, len=num*16)
+            unk2=read_uint8_array(f, len=num*16)
         else:
-            self.unk2=None
-            
-    def read(f):
-        section=SkeletalLODSection(f, ff7r=False)
+            unk1=None
+            unk2=None
+        section=SkeletalLODSection(ff7r, material_id, first_ib_id, face_num, unk, \
+                    first_vertex_id, vertex_group, vertex_num, max_bone_influences, \
+                    unk1, unk2)
         return section
 
-    def read_ff7r(f):
-        section=SkeletalLODSection(f, ff7r=True)
-        return section
+    def copy(self):
+        return SkeletalLODSection(self.ff7r, self.material_id, self.first_ib_id, self.face_num, self.unk, \
+                    self.first_vertex_id, self.vertex_group, self.vertex_num, self.max_bone_influences, \
+                    0, [])
 
     def write(f, section):
         write_uint16(f, 1)
@@ -127,7 +143,7 @@ class SkeletalLODSection(LODSection):
         f.write(SkeletalLODSection.CorrespondClothAssetIndex)
         write_null_array(f, 4)
         write_int32(f,-1)
-        if section.ff7r and section.unk1 is not None:
+        if section.ff7r:
             write_uint32(f, section.unk1)
             write_uint32(f, len(section.unk2)//16)
             write_uint8_array(f, section.unk2)
