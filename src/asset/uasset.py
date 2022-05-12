@@ -64,7 +64,8 @@ class UassetImport(c.LittleEndianStructure):
         ("parent_dir_id", c.c_uint64),
         ("class_id", c.c_uint64),
         ("parent_import_id", c.c_int32),
-        ("name_id", c.c_uint64),
+        ("name_id", c.c_uint32),
+        ("unk", c.c_uint32),
     ]
 
     def __init__(self):
@@ -90,6 +91,7 @@ class UassetImport(c.LittleEndianStructure):
         copied.class_id = self.class_id
         copied.parent_import_id = self.parent_import_id
         copied.name_id = self.name_id
+        copied.unk = copied.unk
         copied.material = self.material
         return copied
 
@@ -104,7 +106,7 @@ def name_imports(imports, name_list):
     skeletal='SkeletalMesh' in import_names
     ff7r=False
     for import_ in imports:
-        if import_.class_name=='MaterialInstanceConstant':
+        if import_.class_name in ['MaterialInstanceConstant', 'SQEX_BonamikAsset']:
             ff7r=True
         if not skeletal and import_.class_name=='Material' and ('NavCollision' not in name_list):
             ff7r=True
@@ -127,31 +129,24 @@ class UassetExport(c.LittleEndianStructure):
         ("unk", c.c_ubyte*64),
     ]
 
-    KNOWN_EXPORTS=['EndEmissiveColorUserData', 'SQEX_BonamikAssetUserData', \
-        'SQEX_KineDriver_AssetUserData', 'SkelMeshBoneAttributeRedirectorUserData', \
-        'BodySetup', 'SkelMeshBoneAttributeFilterUserData', \
-        'EndPhysicalConstraintUserData', 'NavCollision', \
-        'SkeletalMeshSocket']
-    IGNORE=[True, True, True, True, True, True, True, True, True]
+    MAIN_EXPORTS=['SkeletalMesh', 'StaticMesh', 'Skeleton', 'SQEX_BonamikAsset', 'Material', 'MaterialInstanceConstant']
 
     def update(self, size, offset):
         self.size=size
         self.offset=offset
 
     def name_exports(exports, imports, name_list, file_name):
+        asset_type=None
         for export in exports:
             export.import_name = imports[-export.import_id-1].name
             export.name=name_list[export.name_id]
             export.class_name = imports[-export.class_id-1].name
-            if export.class_name in UassetExport.KNOWN_EXPORTS:
-                export.id=UassetExport.KNOWN_EXPORTS.index(export.class_name)
-                export.ignore=UassetExport.IGNORE[export.id]
-            elif (export.class_name in ['SkeletalMesh', 'StaticMesh', 'Skeleton']):
+            if export.class_name in UassetExport.MAIN_EXPORTS:
                 export.id=-1
-                export.ignore=False
                 asset_type = export.class_name
+                export.ignore=False
             else:
-                raise RuntimeError('Unsupported exports. (export: {}, file: {})'.format(export.class_name, file_name))
+                export.ignore=True
         return asset_type
 
 
@@ -229,8 +224,9 @@ class Uasset:
                     i = -i-1
                     logger.log(self.imports[i].name)
                 else:
-                    logger.log(self.name_list[i])
+                    logger.log(i)
             '''
+            
             
 
             check(f.tell(), self.size)

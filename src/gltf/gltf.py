@@ -70,11 +70,16 @@ class Material:
 class glTF:
     def __init__(self, bones, material_names, material_ids, uv_num):
         self.bones = bones
-        self.materials = [Material(name) for name in material_names]
+        if material_names is not None:
+            self.materials = [Material(name) for name in material_names]
+        else:
+            self.materials = None
         self.material_ids = material_ids
         self.uv_num = uv_num
+        self.has_mesh = False
 
     def set_parsed_buffers(self, normals, tangents, positions, texcoords, joints, weights, joints2, weights2, indices):
+        self.has_mesh = True
         self.normals = normals
         self.tangents = tangents
         self.positions = positions
@@ -150,28 +155,30 @@ class glTF:
         if self.bones is not None:
             accessors.append(glTF.get_accessor(i, 5126, len(self.bones), 'MAT4'))
             i=1
-        for j in range(len(self.positions)):
-            vert_ids = self.indices[j]
-            accessors.append(glTF.get_accessor(i, 5123, len(vert_ids), 'SCALAR'))
-            position = self.positions[j]
-            vert_num = len(position)
-            min_pos, max_pos = glTF.get_position_range(position)
-            accessors.append(glTF.get_accessor(i+1, 5126, vert_num, 'VEC3', min_pos = min_pos, max_pos = max_pos))
-            accessors.append(glTF.get_accessor(i+2, 5126, vert_num, 'VEC3'))
-            accessors.append(glTF.get_accessor(i+3, 5126, vert_num, 'VEC4'))
-            i+=4
-            if self.bones is not None:
-                accessors.append(glTF.get_accessor(i, 5123, vert_num, 'VEC4'))
-                accessors.append(glTF.get_accessor(i+1, 5121, vert_num, 'VEC4', normalized=True))
-                i+=2
-                if self.joints2 is not None:
+
+        if self.has_mesh:
+            for j in range(len(self.positions)):
+                vert_ids = self.indices[j]
+                accessors.append(glTF.get_accessor(i, 5123, len(vert_ids), 'SCALAR'))
+                position = self.positions[j]
+                vert_num = len(position)
+                min_pos, max_pos = glTF.get_position_range(position)
+                accessors.append(glTF.get_accessor(i+1, 5126, vert_num, 'VEC3', min_pos = min_pos, max_pos = max_pos))
+                accessors.append(glTF.get_accessor(i+2, 5126, vert_num, 'VEC3'))
+                accessors.append(glTF.get_accessor(i+3, 5126, vert_num, 'VEC4'))
+                i+=4
+                if self.bones is not None:
                     accessors.append(glTF.get_accessor(i, 5123, vert_num, 'VEC4'))
                     accessors.append(glTF.get_accessor(i+1, 5121, vert_num, 'VEC4', normalized=True))
                     i+=2
+                    if self.joints2 is not None:
+                        accessors.append(glTF.get_accessor(i, 5123, vert_num, 'VEC4'))
+                        accessors.append(glTF.get_accessor(i+1, 5121, vert_num, 'VEC4', normalized=True))
+                        i+=2
 
-            for k in range(self.uv_num):
-                accessors.append(glTF.get_accessor(i+k, 5126, vert_num, 'VEC2'))
-            i+=k+1
+                for k in range(self.uv_num):
+                    accessors.append(glTF.get_accessor(i+k, 5126, vert_num, 'VEC2'))
+                i+=k+1
         
         return accessors
 
@@ -218,22 +225,23 @@ class glTF:
                     f.write(b.matrix_bin)
                 size=f.tell()-offset
                 buffer_views.append(glTF.view_to_dict(offset, size))
-            
-            for j in range(len(self.positions)):
-                vert_ids = self.indices[j]
-                buffer_views.append(glTF.write_buffer(f, vert_ids, 'H'))
-                buffer_views.append(glTF.write_buffer(f, self.positions[j], 'f', flatten=True))
-                buffer_views.append(glTF.write_buffer(f, self.normals[j], 'f', flatten=True))
-                buffer_views.append(glTF.write_buffer(f, self.tangents[j], 'f', flatten=True))
-                if self.bones is not None:
-                    buffer_views.append(glTF.write_buffer(f, self.joints[j], 'H', flatten=True))
-                    buffer_views.append(glTF.write_buffer(f, self.weights[j], 'B', flatten=True))
-                    if self.joints2 is not None:
-                        buffer_views.append(glTF.write_buffer(f, self.joints2[j], 'H', flatten=True))
-                        buffer_views.append(glTF.write_buffer(f, self.weights2[j], 'B', flatten=True))
 
-                for texcoord in self.texcoords:
-                   buffer_views.append(glTF.write_buffer(f, texcoord[j], 'f', flatten=True))
+            if self.has_mesh:
+                for j in range(len(self.positions)):
+                    vert_ids = self.indices[j]
+                    buffer_views.append(glTF.write_buffer(f, vert_ids, 'H'))
+                    buffer_views.append(glTF.write_buffer(f, self.positions[j], 'f', flatten=True))
+                    buffer_views.append(glTF.write_buffer(f, self.normals[j], 'f', flatten=True))
+                    buffer_views.append(glTF.write_buffer(f, self.tangents[j], 'f', flatten=True))
+                    if self.bones is not None:
+                        buffer_views.append(glTF.write_buffer(f, self.joints[j], 'H', flatten=True))
+                        buffer_views.append(glTF.write_buffer(f, self.weights[j], 'B', flatten=True))
+                        if self.joints2 is not None:
+                            buffer_views.append(glTF.write_buffer(f, self.joints2[j], 'H', flatten=True))
+                            buffer_views.append(glTF.write_buffer(f, self.weights2[j], 'B', flatten=True))
+
+                    for texcoord in self.texcoords:
+                        buffer_views.append(glTF.write_buffer(f, texcoord[j], 'f', flatten=True))
 
             buffer_info = [{
                 'uri' : name+'.bin',
@@ -263,13 +271,18 @@ class glTF:
                 'skeleton' : 1,
                 'joints' : [i+1 for i in range(len(self.bones))]
             }]
-            d['animations'] = []
+            if self.has_mesh:
+                d['animations'] = []
+            else:
+                del(d['nodes'][0]["mesh"])
+
         else:
             d['nodes'] = [{'name': name, 'mesh': 0}]
 
-        d['materials'] = [m.to_dict() for m in self.materials]
-        d['meshes'] = self.get_meshes()
-        d['meshes'][0]['name']=name
+        if self.has_mesh:
+            d['materials'] = [m.to_dict() for m in self.materials]
+            d['meshes'] = self.get_meshes()
+            d['meshes'][0]['name']=name
         
         buffer_info, buffer_views = self.write_buffers(name, save_folder)
         d['buffers'] = buffer_info

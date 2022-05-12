@@ -19,12 +19,14 @@ class Material:
         for material in materials:
             material.slot_name=name_list[material.slot_name_id]
             material.import_name=imports[-material.import_id-1].name
+            material.file_path = imports[-material.import_id-1].parent_name
             material.print()
 
     def print(self, padding=2):
         pad=' '*padding
         logger.log(pad+self.import_name)
         logger.log(pad+'  slot name: {}'.format(self.slot_name))
+        logger.log(pad+'  file path: {}'.format(self.file_path))
 
     def check_confliction(materials1, materials2, ignore_material_names=False):
         if len(materials1)<len(materials2) and not ignore_material_names:
@@ -86,6 +88,10 @@ class StaticMaterial(Material):
         write_int32(f, material.import_id)
         write_uint32(f, material.slot_name_id)
         f.write(material.bin)
+
+    def copy(self):
+        return StaticMaterial(self.import_id, self.slot_name_id, b''.join([self.bin]))
+
 
 #material for skeletal mesh
 class SkeletalMaterial(Material):

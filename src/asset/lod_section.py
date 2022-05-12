@@ -108,7 +108,6 @@ class SkeletalLODSection(LODSection):
         read_null_array(f,4, 'LOD_Section:ClothingSectionData: GUID should be null.')
         unknown=read_int32(f)
         check(unknown, -1, f, 'LOD_Section:ClothingSectionData: AssetLodIndex should be -1.')
-
         if ff7r:
             unk1=read_uint32(f)
             num=read_uint32(f)

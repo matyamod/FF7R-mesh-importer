@@ -8,6 +8,7 @@ from util.cipher import Cipher
 from asset.mesh import StaticMesh, SkeletalMesh
 from asset.skeleton import SkeletonAsset
 from asset.uasset import Uasset
+#from asset.bonamik import Bonamik
 
 class MeshUexp:
 
@@ -36,7 +37,7 @@ class MeshUexp:
         logger.log('Asset type: {}'.format(self.asset_type))
 
         #check materials
-        if self.asset_type!='Skeleton':
+        if self.asset_type in ['SkeletalMesh', 'StaticMesh']:
             has_material = False
             for imp in self.imports:
                 if imp.material:
@@ -50,21 +51,23 @@ class MeshUexp:
             for export in self.exports:
                 if f.tell()+self.uasset.size!=export.offset:
                     raise RuntimeError('Parse failed.')
+
                 if export.ignore:
                     logger.log('{} (offset: {})'.format(export.name, f.tell()))
                     logger.log('  size: {}'.format(export.size))
                     export.read_uexp(f)
                     
                 else:
-                    if export.id==-1:
-                        #'SkeletalMesh', 'StaticMesh', 'Skeleton'
-                        if self.asset_type=='SkeletalMesh':
-                            self.mesh=SkeletalMesh.read(f, self.ff7r, self.name_list, self.imports)
-                        elif self.asset_type=='StaticMesh':
-                            self.mesh=StaticMesh.read(f, self.ff7r, self.name_list, self.imports)
-                        elif self.asset_type=='Skeleton':
-                            self.skeleton = SkeletonAsset.read(f, self.name_list)
-                        self.unknown2=f.read(export.offset+export.size-f.tell()-self.uasset.size)
+                    #'SkeletalMesh', 'StaticMesh', 'Skeleton'
+                    if self.asset_type=='SkeletalMesh':
+                        self.mesh=SkeletalMesh.read(f, self.ff7r, self.name_list, self.imports)
+                    elif self.asset_type=='StaticMesh':
+                        self.mesh=StaticMesh.read(f, self.ff7r, self.name_list, self.imports)
+                    elif self.asset_type=='Skeleton':
+                        self.skeleton = SkeletonAsset.read(f, self.name_list)
+                    #elif self.asset_type=='SQEX_BonamikAsset':
+                    #    self.bonamik = Bonamik.read(f,self.name_list)
+                    self.unknown2=f.read(export.offset+export.size-f.tell()-self.uasset.size)
 
             #footer
             offset = f.tell()
@@ -86,15 +89,18 @@ class MeshUexp:
                     export.write_uexp(f)
                     size=export.size
                 else:
-                    if export.id==-1:
-                        if self.asset_type=='SkeletalMesh':
-                            SkeletalMesh.write(f, self.mesh)
-                        elif self.asset_type=='StaticMesh':
-                            StaticMesh.write(f, self.mesh)
-                        elif self.asset_type=='Skeleton':
-                            SkeletonAsset.write(f, self.skeleton)
-                        f.write(self.unknown2)
-                        size=f.tell()-offset
+                    if self.asset_type=='SkeletalMesh':
+                        SkeletalMesh.write(f, self.mesh)
+                    elif self.asset_type=='StaticMesh':
+                        StaticMesh.write(f, self.mesh)
+                    elif self.asset_type=='Skeleton':
+                        SkeletonAsset.write(f, self.skeleton)
+                    #elif self.asset_type=='SQEX_BonamikAsset':
+                    #    Bonamik.write(f,self.bonamik)
+                    else:
+                        raise RuntimeError('Unsupported asset. ({})'.format(self.asset_type))
+                    f.write(self.unknown2)
+                    size=f.tell()-offset
 
                 export.update(size, offset)
 
@@ -104,9 +110,12 @@ class MeshUexp:
         self.uasset.save(file[:-4]+'uasset', uexp_size)
 
     def save_as_gltf(self, save_folder):
-        if self.asset_type=='Skeleton':
+        if 'Mesh' in self.asset_type:
+            self.mesh.save_as_gltf(self.name, save_folder)
+        elif self.asset_type=='Skeleton':
+            self.skeleton.save_as_gltf(self.name, save_folder)
+        else:
             raise RuntimeError('Unsupported feature for static mesh')
-        self.mesh.save_as_gltf(self.name, save_folder)
 
 
     def remove_LODs(self):
@@ -122,11 +131,12 @@ class MeshUexp:
                                           only_phy_bones=only_phy_bones, dont_remove_KDI=dont_remove_KDI,
                                           ignore_material_names=ignore_material_names)
         elif self.asset_type=='StaticMesh':
-            self.mesh.import_LODs(mesh_uexp.mesh, ignore_material_names=ignore_material_names)
+            self.mesh.import_LODs(mesh_uexp.mesh, self.imports, self.name_list, self.uasset.file_data_ids,
+                                          ignore_material_names=ignore_material_names)
         elif self.asset_type=='Skeleton':
             if mesh_uexp.asset_type!='SkeletalMesh':
                 raise RuntimeError('ue4_18_file should be skeletal mesh.')
-            self.skeleton.import_bones(mesh_uexp.mesh.skeleton.bones, only_phy_bones=only_phy_bones)
+            self.skeleton.import_bones(mesh_uexp.mesh.skeleton.bones, self.name_list, only_phy_bones=only_phy_bones)
 
     def remove_KDI(self):
         if self.asset_type=='SkeletalMesh':

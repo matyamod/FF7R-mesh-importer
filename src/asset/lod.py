@@ -132,7 +132,11 @@ class StaticLOD(LOD):
 
     def import_LOD(self, lod, name=''):
         super().import_LOD(lod, name=name)
-        self.sections = lod.sections
+        self.sections=self.sections[:len(lod.sections)]
+        if len(self.sections)<len(lod.sections):
+            self.sections += [self.sections[-1].copy() for i in range(len(lod.sections)-len(self.sections))]
+        for self_section, lod_section in zip(self.sections, lod.sections):
+            self_section.import_section(lod_section)
         self.face_num = lod.face_num
         self.flags = lod.flags
         #self.unk = new_lod.unk #if import this, umodel will crash
@@ -324,3 +328,10 @@ class SkeletalLOD(LOD):
         indices = [[i-first_id for i in ids] for ids, first_id in zip(indices, first_vertex_ids)]
         
         return normals, tangents, positions, texcoords, joints, weights, joints2, weights2, indices
+
+    def gen_adjacency(self):
+        ib = list(self.ib.parse())
+        faces = [ib[i*3:(i+1)*3] for i in range(len(ib)//3)]
+        adjacency = [f+[f[0],f[1],f[1],f[2],f[2],f[0]]+f for f in faces]
+        adjacency = [x for row in adjacency for x in row]
+        self.ib2.update(adjacency)

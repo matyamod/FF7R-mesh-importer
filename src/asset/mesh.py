@@ -3,7 +3,7 @@ from util.io_util import *
 from util.logger import logger
 
 from asset.lod import StaticLOD, SkeletalLOD
-from asset.skeleton import Skeleton
+from asset.skeleton import Skeleton, Bone
 from asset.material import Material, StaticMaterial, SkeletalMaterial
 from asset.buffer import Buffer
 
@@ -24,11 +24,13 @@ class Mesh:
 
         logger.log('LOD1~{} have been removed.'.format(num-1), ignore_verbose=True)
 
-    def import_LODs(self, mesh, ignore_material_names=False):
+    def import_LODs(self, mesh, imports, name_list, file_data_ids, ignore_material_names=False):
+
         new_material_ids = Material.check_confliction(self.materials, mesh.materials, ignore_material_names=ignore_material_names)
         
         LOD_num_self=len(self.LODs)
         LOD_num=min(LOD_num_self, len(mesh.LODs))
+        #LOD_num=1
         if LOD_num<LOD_num_self:
             self.LODs=self.LODs[:LOD_num]
             logger.log('LOD{}~{} have been removed.'.format(LOD_num, LOD_num_self-1), ignore_verbose=True)
@@ -66,9 +68,43 @@ class Mesh:
             import_id=-read_int32(f)-1
             if imports[import_id].material or seek_import:
                 break
-            print(imports[import_id].name)
+            #print(imports[import_id].name)
             buf=f.read(3)
         return
+
+    def add_material_slot(self, imports, name_list, file_data_ids, material = None):
+        if material is None:
+            slot_name = 'new_material_slot_name'
+            import_name = 'new_material_name'
+            file_path = '/Game/GameContents/path_to_material'
+        else:
+            slot_name = material.slot_name
+            import_name = material.import_name
+            file_path = material.file_path
+
+        #add material slot
+        import_id = self.materials[-1].import_id
+        new_material = self.materials[-1].copy()
+        new_material.import_id = -len(imports)-1
+        new_material.slot_name_id = len(name_list)
+        self.materials.append(new_material)
+        name_list.append(slot_name)
+        file_data_ids.append(-len(imports)-1)
+
+        #add import for material
+        sample_material_import = imports[-import_id-1]
+        new_material_import = sample_material_import.copy()
+        imports.append(new_material_import)
+        new_material_import.parent_import_id = -len(imports)-1
+        new_material_import.name_id = len(name_list)
+        name_list.append(import_name)
+
+        #add import for material dir
+        sample_dir_import = imports[-sample_material_import.parent_import_id-1]
+        new_dir_import = sample_dir_import.copy()
+        imports.append(new_dir_import)
+        new_dir_import.name_id = len(name_list)
+        name_list.append(file_path)
 
 #static mesh
 class StaticMesh(Mesh):
@@ -117,6 +153,11 @@ class StaticMesh(Mesh):
         normals, tangents, positions, texcoords, indices= self.LODs[0].parse_buffers_for_gltf()
         gltf.set_parsed_buffers(normals, tangents, positions, texcoords, None, None, None, None, indices)
         gltf.save(name, save_folder)
+
+    def import_LODs(self, mesh, imports, name_list, file_data_ids, ignore_material_names=False):
+        if len(self.materials)<len(mesh.materials):
+            raise RuntimeError('Can not add material slos to static mesh.')
+        super().import_LODs(mesh, imports, name_list, file_data_ids, ignore_material_names=ignore_material_names)
 
 #skeletal mesh
 class SkeletalMesh(Mesh):
@@ -204,6 +245,7 @@ class SkeletalMesh(Mesh):
 
         if not only_mesh:
             self.skeleton.import_bones(skeletalmesh.skeleton.bones, name_list, only_phy_bones=only_phy_bones)
+            #print(len(name_list))
             if self.phy_mesh is not None:
                 self.phy_mesh.update_bone_ids(self.skeleton.bones)
 
@@ -213,7 +255,7 @@ class SkeletalMesh(Mesh):
                 self.add_material_slot(imports, name_list, file_data_ids, skeletalmesh.materials[len(self.materials)])
             logger.log('Added {} materials.'.format(added_num), ignore_verbose=True)
 
-        super().import_LODs(skeletalmesh, ignore_material_names=ignore_material_names)
+        super().import_LODs(skeletalmesh, imports, name_list, file_data_ids, ignore_material_names=ignore_material_names)
 
         if not dont_remove_KDI:
             self.remove_KDI()
@@ -228,80 +270,13 @@ class SkeletalMesh(Mesh):
         logger.log("KDI buffers have been removed.")
 
     def save_as_gltf(self, name, save_folder):
-        bones = self.skeleton.to_gltf_bones()
+        bones = Bone.bones_to_gltf(self.skeleton.bones)
         material_names = [m.import_name for m in self.materials]
         material_ids, uv_num = self.LODs[0].get_meta_for_gltf()
         gltf = glTF(bones, material_names, material_ids, uv_num)
         normals, tangents, positions, texcoords, joints, weights, joints2, weights2, indices = self.LODs[0].parse_buffers_for_gltf()
         gltf.set_parsed_buffers(normals, tangents, positions, texcoords, joints, weights, joints2, weights2, indices)
         gltf.save(name, save_folder)
-
-    def add_material_slot(self, imports, name_list, file_data_ids, material = None):
-        if material is None:
-            slot_name = 'new_material_slot_name'
-            import_name = 'new_material_name'
-        else:
-            slot_name = material.slot_name
-            import_name = material.import_name
-
-        #add material slot
-        bin = self.materials[-1].bin
-        import_id = self.materials[-1].import_id
-        self.materials.append(SkeletalMaterial(-len(imports)-1, len(name_list), bin))
-        name_list.append(slot_name)
-        file_data_ids.append(-len(imports)-1)
-
-        #add import for material
-        sample_material_import = imports[-import_id-1]
-        new_material_import = sample_material_import.copy()
-        imports.append(new_material_import)
-        new_material_import.parent_import_id = -len(imports)-1
-        new_material_import.name_id = len(name_list)
-        name_list.append(import_name)
-
-        #add import for material dir
-        sample_dir_import = imports[-sample_material_import.parent_import_id-1]
-        new_dir_import = sample_dir_import.copy()
-        imports.append(new_dir_import)
-        new_dir_import.name_id = len(name_list)
-        name_list.append('/Game/GameContents/{}_dir'.format(import_name))
-
-        #self.add_material_to_unk(imports, name_list)
-
-    '''
-    def add_material_to_unk(self, imports, name_list):
-        new_num = len(self.materials)
-        print('new_num: {}'.format(new_num))
-        with io.BytesIO(self.unk) as f:
-            Mesh.seek_materials(f, imports, seek_import=True)
-            offset = f.tell()
-            print('offset: {}'.format(offset))
-            f.seek(0)
-            bin1 = f.read(offset+15)
-            material_num  = read_uint32(f)
-            print(material_num)
-            f.seek(3*material_num, 1)
-            bin2 = f.read(8+8+17+8+4)
-            num = read_uint32(f)
-            print('num: {}'.format(num))
-            if num!=material_num:
-                num2=read_uint32(f)
-                print(num2)
-            else:
-                num2=None
-            bin3 = f.read(4*material_num)
-            bin_ = struct.unpack('<'+'I'*material_num, bin3)
-            for b in bin_:
-                print(name_list[b])
-            bin4 = f.read()
-        self.unk = b''.join([bin1, struct.pack('<I', new_num), b'800707'*new_num, bin2])
-        if num2 is None:
-            self.unk = b''.join([self.unk, struct.pack('<I', new_num), bin3])
-        else:
-            self.unk = b''.join([self.unk, struct.pack('<I', num), struct.pack('<I', new_num), bin3])
-        self.unk = b''.join([self.unk, struct.pack('<I', len(name_list) - 1), bin4])
-    '''
-
 
 #collider or something? low poly mesh.
 class PhysicalMesh:
@@ -331,11 +306,16 @@ class PhysicalMesh:
     def update_bone_ids(self, new_bones):
         new_bone_names = [b.name for b in new_bones]
         id_map = [0]*len(self.names)
+        missing_bones = []
         for name, i in zip(self.names, range(len(self.names))):
             if name not in new_bone_names:
-                logger.log('Warning: Some existing bones are missing. I do not know how it affect the game.', ignore_verbose=True)
-                return
+                missing_bones.append(name)
+                continue
             id_map[i]=new_bone_names.index(name)
+        if len(missing_bones)>0:
+            logger.warn('Some existing bones are missing. It might corrupt animations. {}'.format(missing_bones))
+            return
+
         ids = [self.weight_buffer[i*8:i*8+8] for i in range(len(self.vb)//12)]
         def update(ids):
             for i in range(4):

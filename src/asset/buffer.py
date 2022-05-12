@@ -255,6 +255,11 @@ class SkeletalIndexBuffer(Buffer):
         indices = struct.unpack('<'+form[self.stride]*self.size, self.buf)
         return indices
 
+    def update(self, new_ids):
+        form = [None, None, 'H', None, 'I']
+        self.size = len(new_ids)
+        self.buf = struct.pack('<'+form[self.stride]*self.size, *new_ids)
+
 #KDI buffers
 class KDIBuffer(Buffer):
     def read(f, name=''):

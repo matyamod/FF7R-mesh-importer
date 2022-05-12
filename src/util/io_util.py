@@ -49,8 +49,8 @@ def read_array(file, read_func, len=None):
     ary=[read_func(file) for i in range(len)]
     return ary
 
-st_list = ['b', 'B', 'h', 'H', 'i', 'I', 'l', 'L', 'f', 'd']
-st_size = [1, 1, 2, 2, 4, 4, 8, 8, 4, 8]
+st_list = ['b', 'B', 'h', 'H', 'i', 'I', 'l', 'L', 'e', 'f', 'd']
+st_size = [1, 1, 2, 2, 4, 4, 8, 8, 2, 4, 8]
 def read_num_array(file, st, len=None):
     if st not in st_list:
         raise RuntimeError('Structure not found. {}'.format(st))
@@ -74,6 +74,10 @@ def read_int32_array(file, len=None):
 def read_float32_array(file, len=None):
     return read_num_array(file, 'f', len=len)
 
+def read_float16_array(file, len=None):
+    return read_num_array(file, 'e', len=len)
+
+
 def read_vec3_f32(file):
     return read_float32_array(file, len=3)
 
@@ -84,11 +88,15 @@ def read_16byte(file):
     return file.read(16)
 
 def read_str(file):
-    num = read_uint32(file)
+    num = read_int32(file)
     if num==0:
         return None
-    string = file.read(num-1).decode()
-    file.seek(1,1)
+
+    utf16=num<0
+    if num<0:
+        num=-num
+    string = file.read((num-1)*(1+utf16)).decode("utf-16-le"*utf16 + "ascii"*(not utf16))
+    file.seek(1+utf16,1)
     return string
 
 def read_const_uint32(f, n, msg='Unexpected Value!'):
@@ -168,9 +176,10 @@ def write_16byte(file, bin):
 
 def write_str(file, s):
     num = len(s)+1
-    write_uint32(file, num)
-    str_byte = s.encode()
-    file.write(str_byte + b'\x00')
+    utf16=not s.isascii()
+    write_int32(file, num*(1- 2* utf16))
+    str_byte = s.encode("utf-16-le"*utf16+"ascii"*(not utf16))
+    file.write(str_byte + b'\x00'*(1+utf16))
 
 def write_null(f):
     write_uint32(f, 0)

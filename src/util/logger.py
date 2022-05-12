@@ -7,11 +7,15 @@ class Logger:
         self.file_name = time.strftime('%Y%m%d-%H%M%S'+'.txt')
         file_path=os.path.join(Logger.LOG_FOLDER, self.file_name)
         self.f=open(file_path, 'w')
+        self.warnings = []
 
     def set_verbose(self, verbose):
         self.verbose=verbose
 
     def close(self):
+        if len(self.warnings)>0:
+            self.log('You got {} warning{}.'.format(len(self.warnings), 's'*(len(self.warnings)>1)))
+            [self.log('Warning: ' + w, ignore_verbose=True) for w in self.warnings]
         self.f.close()
 
     def log(self, string, ignore_verbose=False):
@@ -26,6 +30,10 @@ class Logger:
         self.file_name = 'error-'+self.file_name
         err_file_path=os.path.join(Logger.LOG_FOLDER, self.file_name)
         os.rename(file_path, err_file_path)
+
+    def warn(self, warning):
+        self.log('Warning: ' + warning, ignore_verbose=True)
+        self.warnings.append(warning)
 
 class Timer:
     def __init__(self):
