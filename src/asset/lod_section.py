@@ -179,3 +179,14 @@ class SkeletalLODSection(LODSection):
         if self.unk2 is not None:
             logger.log(pad+'  KDI flag: {}'.format(self.unk1==True))
             logger.log(pad+'  vertices influenced by KDI: {}'.format(len(self.unk2)//16))
+
+    def import_gltf(self, vertex_group, material_id, first_vertex_id, vertex_num, first_ib_id, face_num, max_bone_influences):
+        self.material_id = material_id
+        self.vertex_group = vertex_group
+
+        self.first_ib_id=first_ib_id
+        self.face_num=face_num
+        self.first_vertex_id=first_vertex_id
+        self.vertex_num=vertex_num
+        self.max_bone_influences=max_bone_influences
+        #self.unk=section.unk

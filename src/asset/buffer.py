@@ -105,10 +105,8 @@ class StaticMeshVertexBuffer(VertexBuffer):
         stride = 8+2*self.uv_num
         normals = [parsed[i*stride:i*stride+8] for i in range(self.size)]
         normals = [[i*2/255-1 for i in n] for n in normals]
-        normal = [n[4:7] for n in normals]
-        normal = [[n[0], n[2], n[1]] for n in normal]
-        tangent = [n[:4] for n in normals]
-        tangent = [[n[0], n[2], n[1], n[3]] for n in tangent]
+        normal = [[n[4], n[6], n[5]] for n in normals]
+        tangent = [[n[0], n[2], n[1], n[3]] for n in normals]
         texcoords = []
         for j in range(self.uv_num):
             texcoord = [parsed[i*stride+8+j*2:i*stride+8+j*2+2] for i in range(self.size)]
@@ -165,10 +163,8 @@ class SkeletalMeshVertexBuffer(VertexBuffer):
         stride = 11+2*self.uv_num
         normals = [parsed[i*stride:i*stride+8] for i in range(self.size)]
         normals = [[i*2/255-1 for i in n] for n in normals]
-        normal = [n[4:7] for n in normals]
-        normal = [[n[0], n[2], n[1]] for n in normal]
-        tangent = [n[:4] for n in normals]
-        tangent = [[n[0], n[2], n[1], n[3]] for n in tangent]
+        normal = [[n[4], n[6], n[5]] for n in normals]
+        tangent = [[n[0], n[2], n[1], n[3]] for n in normals]
         position = [parsed[i*stride+8:i*stride+11] for i in range(self.size)]
         position = [[p/100 for p in pos] for pos in position]
         position = [[pos[0], pos[2], pos[1]] for pos in position]
@@ -177,6 +173,38 @@ class SkeletalMeshVertexBuffer(VertexBuffer):
             texcoord = [parsed[i*stride+11+j*2:i*stride+11+j*2+2] for i in range(self.size)]
             texcoords.append(texcoord)
         return normal, tangent, position, texcoords
+
+    def get_range(self):
+        uv_type = 'f'*self.use_float32+'e'*(not self.use_float32)
+        parsed = struct.unpack('<'+('B'*8+'fff'+uv_type*2*self.uv_num)*self.size, self.buf)
+        stride = 11+2*self.uv_num
+        position = [parsed[i*stride+8:i*stride+11] for i in range(self.size)]
+        position = [[p/100 for p in pos] for pos in position]
+        x = [pos[0] for pos in position]
+        y = [pos[2] for pos in position]
+        z = [pos[1] for pos in position]
+        return [max(x)-min(x), max(y)-min(y), max(z)-min(z)]
+
+    def import_gltf(self, normal, tangent, position, texcoords, uv_num):
+        uv_type = 'f'*self.use_float32+'e'*(not self.use_float32)
+        self.uv_num = uv_num
+        self.stride = 20+(1+self.use_float32)*4*self.uv_num
+        self.size = len(normal)
+        self.vertex_num = self.size
+        normal = [[n[0], n[2], n[1], 1] for n, t in zip(normal, tangent)]
+        tangent = [[t[0], t[2], t[1], t[3]] for t in tangent]
+        normal = [tan+nor for tan, nor in zip(tangent, normal)]
+        normal = [[int((i+1)*255/2) for i in n] for n in normal]
+        position = [[pos[0], pos[2], pos[1]] for pos in position]
+        position = [[p*100 for p in pos] for pos in position]
+        buf = [n+p for n, p in zip(normal, position)]
+        for texcoord in texcoords:
+            buf = [b+t for b,t in zip(buf, texcoord)]
+        buf = flatten(buf)
+        self.buf = struct.pack('<'+('B'*8+'fff'+uv_type*2*self.uv_num)*self.size, *buf)
+
+def flatten(l):
+    return [x for row in l for x in row]
 
 #Skin weights for skeletal mesh
 class SkinWeightVertexBuffer(VertexBuffer):
@@ -204,6 +232,7 @@ class SkinWeightVertexBuffer(VertexBuffer):
         parsed = struct.unpack('<'+'B'*len(self.buf), self.buf)
         joint = [parsed[i*self.stride:i*self.stride+4] for i in range(self.size)]
         weight = [parsed[i*self.stride+self.stride//2:i*self.stride+self.stride//2+4] for i in range(self.size)]
+
         if self.extra_bone_flag:
             joint2 = [parsed[i*self.stride+4:i*self.stride+8] for i in range(self.size)]
             weight2 = [parsed[i*self.stride+self.stride//2+4:i*self.stride+self.stride//2+8] for i in range(self.size)]
@@ -211,6 +240,18 @@ class SkinWeightVertexBuffer(VertexBuffer):
             joint2=None
             weight2=None
         return joint, weight, joint2, weight2
+
+    def import_gltf(self, joint, weight, extra_bone_flag):
+        self.size = len(joint)
+        self.vertex_num = self.size
+        self.extra_bone_flag = extra_bone_flag
+        self.stride = 8*(1+self.extra_bone_flag)
+        weight = [[int(i*255) for i in w] for w in weight]
+        buf = [j+w for j, w in zip(joint, weight)]
+        buf = flatten(buf)
+        #buf = [int(i) for i in buf]
+        self.buf = struct.pack('<'+'B'*self.size*self.stride, *buf)
+        pass
 
 #Index buffer for static mesh
 class StaticIndexBuffer(Buffer):
@@ -255,9 +296,14 @@ class SkeletalIndexBuffer(Buffer):
         indices = struct.unpack('<'+form[self.stride]*self.size, self.buf)
         return indices
 
-    def update(self, new_ids):
+    def update(self, new_ids, stride):
         form = [None, None, 'H', None, 'I']
         self.size = len(new_ids)
+        #new_ids = [new_ids[i*3:(i+1)*3] for i in range(self.size//3)]
+        #new_ids = [[ids[0], ids[2], ids[1]] for ids in new_ids]
+        #new_ids = flatten(new_ids)
+        #print(len(new_ids))
+        self.stride = stride
         self.buf = struct.pack('<'+form[self.stride]*self.size, *new_ids)
 
 #KDI buffers

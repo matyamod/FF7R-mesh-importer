@@ -112,31 +112,36 @@ class MeshUexp:
     def save_as_gltf(self, save_folder):
         if 'Mesh' in self.asset_type:
             self.mesh.save_as_gltf(self.name, save_folder)
-        elif self.asset_type=='Skeleton':
-            self.skeleton.save_as_gltf(self.name, save_folder)
+        #elif self.asset_type=='Skeleton':
+            #self.skeleton.save_as_gltf(self.name, save_folder)
         else:
             raise RuntimeError('Unsupported feature for static mesh')
-
 
     def remove_LODs(self):
         self.mesh.remove_LODs()
 
     def import_LODs(self, mesh_uexp, only_mesh=False, only_phy_bones=False,
-                    dont_remove_KDI=False, ignore_material_names=False):
+                    dont_remove_KDI=False):
         if self.asset_type!=mesh_uexp.asset_type and self.asset_type!='Skeleton':
             raise RuntimeError('Asset types are not the same. ({}, {})'.format(self.asset_type, mesh_uexp.asset_type))
         if self.asset_type=='SkeletalMesh':
             self.mesh.import_LODs(mesh_uexp.mesh, self.imports, self.name_list, self.uasset.file_data_ids,
                                           only_mesh=only_mesh,
-                                          only_phy_bones=only_phy_bones, dont_remove_KDI=dont_remove_KDI,
-                                          ignore_material_names=ignore_material_names)
+                                          only_phy_bones=only_phy_bones, dont_remove_KDI=dont_remove_KDI)
         elif self.asset_type=='StaticMesh':
-            self.mesh.import_LODs(mesh_uexp.mesh, self.imports, self.name_list, self.uasset.file_data_ids,
-                                          ignore_material_names=ignore_material_names)
+            self.mesh.import_LODs(mesh_uexp.mesh, self.imports, self.name_list, self.uasset.file_data_ids)
         elif self.asset_type=='Skeleton':
-            if mesh_uexp.asset_type!='SkeletalMesh':
-                raise RuntimeError('ue4_18_file should be skeletal mesh.')
-            self.skeleton.import_bones(mesh_uexp.mesh.skeleton.bones, self.name_list, only_phy_bones=only_phy_bones)
+            if mesh_uexp.asset_type=='SkeletalMesh':
+                self.skeleton.import_bones(mesh_uexp.mesh.skeleton.bones, self.name_list, only_phy_bones=only_phy_bones)
+            elif mesh_uexp.asset_type=='Skeleton':
+                self.skeleton.import_bones(mesh_uexp.skeleton.bones, self.name_list, only_phy_bones=only_phy_bones)
+            else:
+                raise RuntimeError('ue4_18_file should have skeleton.')
+
+    def import_gltf(self, gltf):
+        if self.asset_type!='SkeletalMesh':
+            raise RuntimeError('gltf injection is not supported for {}'.format(self.asset_type))
+        self.mesh.import_gltf(gltf, self.imports, self.name_list, self.uasset.file_data_ids)
 
     def remove_KDI(self):
         if self.asset_type=='SkeletalMesh':

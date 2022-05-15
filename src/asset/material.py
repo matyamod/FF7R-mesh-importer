@@ -29,24 +29,28 @@ class Material:
         logger.log(pad+'  file path: {}'.format(self.file_path))
 
     def check_confliction(materials1, materials2, ignore_material_names=False):
-        if len(materials1)<len(materials2) and not ignore_material_names:
-            raise RuntimeError('Materials are too much. You can not import the mesh.')
-
         def get_range(num):
             return [i for i in range(num)]
 
         new_material_ids = get_range(len(materials2))
 
         if ignore_material_names:
+            logger.log('Material names have been ignored.')
+            return new_material_ids
+
+        material_names1 = [mat1.import_name for mat1 in materials1]
+        material_names2 = [mat2.import_name for mat2 in materials2]
+        if len(material_names1)!=len(list(set(material_names1))) or len(material_names2)!=len(list(set(material_names2))):
+            logger.warn('Material name conflicts detected. Materials might not be assigned correctly.')
             return new_material_ids
 
         resolved_mat1 = [False for i in range(len(materials1))]
         unresolved_mat2 = []
-        for mat2, i in zip(materials2, get_range(len(materials2))):
+        for mat2, i in zip(material_names2, get_range(len(materials2))):
             found = False
             
-            for mat1, j in zip(materials1, get_range(len(materials1))):
-                if mat1.import_name==mat2.import_name:
+            for mat1, j in zip(material_names1, get_range(len(materials1))):
+                if mat1==mat2:
                     new_material_ids[i]=j
                     resolved_mat1[j]=True
                     found=True
@@ -65,10 +69,8 @@ class Material:
             
         if len(unresolved_mat2)!=0:
             mat2=unresolved_mat2[0][0]
-            msg = 'Unknown material name has been detected. ({}) You can not import the mesh. or use "--ignore_material_names".'.format(mat2.import_name)
-            if 'dummy_material' in mat2.import_name:
-                msg+=' "dummy_material" is not the correct material name. Maybe UE Viewer failed to parse the name.'
-            raise RuntimeError(msg)
+            logger.warn('Material name conflicts detected. Materials might not be assigned correctly. ({})'.format(mat2))
+            return get_range(len(materials2))
 
         if new_material_ids!=get_range(len(materials2)):
             logger.log('Material name conflicts detected. But it has been resolved correctly.')

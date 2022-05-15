@@ -1,3 +1,13 @@
+ver 0.2.3
+- Removed --ignore_material_names option
+- Enabled to add bones to skeleton asset
+- Added gltf export function for skeleton asset
+- Added support for gltf injection to skeletal mesh
+
+ver 0.2.2
+- Enabled to add materials to skeletal mesh
+- Enabled to add bones to skeletal mesh
+
 ver 0.2.1
 - Add export mode
 - Add traceback to logger

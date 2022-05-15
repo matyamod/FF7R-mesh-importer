@@ -78,9 +78,9 @@ class UassetImport(c.LittleEndianStructure):
         self.material=self.class_name in ['Material', 'MaterialInstanceConstant']
         return self.name
 
-    def print(self, padding=2):
+    def print(self, str = '', padding=2):
         pad = ' '*padding
-        logger.log(pad+self.name)
+        logger.log(pad+str+': ' + self.name)
         logger.log(pad+'  class: '+self.class_name)
         logger.log(pad+'  parent dir: '+self.parent_dir)
         logger.log(pad+'  parent import: ' + self.parent_name)
@@ -201,7 +201,7 @@ class Uasset:
             self.imports=read_struct_array(f, UassetImport, len=self.header.import_count)
             self.ff7r = name_imports(self.imports, self.name_list)
             logger.log('Import')
-            list(map(lambda x: x.print(), self.imports))
+            [x.print(str(i)) for x,i in zip(self.imports, range(len(self.imports)))]
 
             #read exports
             check(self.header.export_offset, f.tell(), f)
@@ -226,8 +226,6 @@ class Uasset:
                 else:
                     logger.log(i)
             '''
-            
-            
 
             check(f.tell(), self.size)
             check(self.header.uasset_size, self.size)
@@ -268,7 +266,6 @@ class Uasset:
             self.header.uasset_size = f.tell()
             self.header.file_length=uexp_size+self.header.uasset_size-4
             
-
             #write header
             f.seek(0)
             f.write(self.header)

@@ -14,8 +14,8 @@ class Logger:
 
     def close(self):
         if len(self.warnings)>0:
-            self.log('You got {} warning{}.'.format(len(self.warnings), 's'*(len(self.warnings)>1)))
             [self.log('Warning: ' + w, ignore_verbose=True) for w in self.warnings]
+            self.log('You got {} warning{}. Check the console outputs.'.format(len(self.warnings), 's'*(len(self.warnings)>1)))
         self.f.close()
 
     def log(self, string, ignore_verbose=False):
@@ -32,7 +32,7 @@ class Logger:
         os.rename(file_path, err_file_path)
 
     def warn(self, warning):
-        self.log('Warning: ' + warning, ignore_verbose=True)
+        #self.log('Warning: ' + warning, ignore_verbose=True)
         self.warnings.append(warning)
 
 class Timer:

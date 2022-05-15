@@ -29,7 +29,7 @@ class LOD:
         if self.color_vb is not None:
             self.color_vb = lod.color_vb
             if lod.color_vb is None:
-                logger.log('Warning: The original mesh has color VB. But your mesh doesn\'t. I don\'t know if the injection works.')
+                logger.warn('The original mesh has color VB. But your mesh doesn\'t. I don\'t know if the injection works.')
         self.uv_num = lod.uv_num
         logger.log('LOD{} has been imported.'.format(name))
         logger.log('  faces: {} -> {}'.format(f_num1, f_num2))
@@ -56,6 +56,9 @@ def split_list(l, first_ids):
     last_ids = first_ids[1:]+[len(l)]
     splitted = [l[first:last] for first, last in zip(first_ids, last_ids)]
     return splitted
+
+def flatten(l):
+    return [x for row in l for x in row]
 
 #LOD for static mesh
 class StaticLOD(LOD):
@@ -132,9 +135,9 @@ class StaticLOD(LOD):
 
     def import_LOD(self, lod, name=''):
         super().import_LOD(lod, name=name)
-        self.sections=self.sections[:len(lod.sections)]
         if len(self.sections)<len(lod.sections):
             self.sections += [self.sections[-1].copy() for i in range(len(lod.sections)-len(self.sections))]
+        self.sections=self.sections[:len(lod.sections)]
         for self_section, lod_section in zip(self.sections, lod.sections):
             self_section.import_section(lod_section)
         self.face_num = lod.face_num
@@ -168,8 +171,9 @@ class SkeletalLOD(LOD):
 
     def __init__(self, f, ff7r=True):
         self.offset=f.tell()
-        one = read_uint16(f)
+        one = read_uint8(f)
         check(one, 1, f, 'Parse failed! (LOD:one)')
+        self.no_tessellation = read_uint8(f)
         self.sections=[SkeletalLODSection.read(f, ff7r=ff7r) for i in range(read_uint32(f))]
 
         self.KDI_buffer_size=0
@@ -208,15 +212,17 @@ class SkeletalLOD(LOD):
         self.vb = SkeletalMeshVertexBuffer.read(f, name='VB0')
         check(self.uv_num, self.vb.uv_num)
         self.vb2 = SkinWeightVertexBuffer.read(f, name='VB2')
-
         u=read_uint8(f)
         f.seek(-1,1)
-        if u==1:#HasVertexColors
+        if u==1 and not self.no_tessellation:#HasVertexColors
             self.color_vb = ColorVertexBuffer.read(f, name='ColorVB')
         else:
             self.color_vb=None
 
-        self.ib2 = SkeletalIndexBuffer.read(f, name='IB2')
+        if not self.no_tessellation:
+            self.ib2 = SkeletalIndexBuffer.read(f, name='IB2')
+        else:
+            self.ib2 = None
 
         if self.KDI_buffer_size>0:
             self.KDI_buffer=KDIBuffer.read(f, name='KDI_buffer')
@@ -227,7 +233,8 @@ class SkeletalLOD(LOD):
         return SkeletalLOD(f, ff7r=ff7r)
     
     def write(f, lod):
-        write_uint16(f, 1)
+        write_uint8(f, 1)
+        write_uint8(f, lod.no_tessellation)
         write_array(f, lod.sections, SkeletalLODSection.write, with_length=True)
         SkeletalIndexBuffer.write(f, lod.ib)
         write_uint32(f, len(lod.active_bone_ids)//2)
@@ -250,18 +257,19 @@ class SkeletalLOD(LOD):
         if lod.color_vb is not None:
             ColorVertexBuffer.write(f, lod.color_vb)
 
-        SkeletalIndexBuffer.write(f, lod.ib2)
+        if not lod.no_tessellation:
+            SkeletalIndexBuffer.write(f, lod.ib2)
 
         if lod.KDI_buffer_size>0:
             KDIBuffer.write(f, lod.KDI_buffer)
             KDIBuffer.write(f, lod.KDI_VB)
 
     def import_LOD(self, lod, name=''):
-        
+        self.no_tessellation = lod.no_tessellation
         super().import_LOD(lod, name=name)
-        self.sections=self.sections[:len(lod.sections)]
         if len(self.sections)<len(lod.sections):
             self.sections += [self.sections[-1].copy() for i in range(len(lod.sections)-len(self.sections))]
+        self.sections=self.sections[:len(lod.sections)]
         for self_section, lod_section in zip(self.sections, lod.sections):
             self_section.import_section(lod_section)
         
@@ -290,7 +298,8 @@ class SkeletalLOD(LOD):
         logger.log(pad+'  vertex num: {}'.format(self.vb.vertex_num))
         logger.log(pad+'  uv num: {}'.format(self.uv_num))
         for buf in self.get_buffers():
-            buf.print(padding=padding+2)
+            if buf is not None:
+                buf.print(padding=padding+2)
 
     def remove_KDI(self):
         self.KDI_buffer_size=0
@@ -329,9 +338,70 @@ class SkeletalLOD(LOD):
         
         return normals, tangents, positions, texcoords, joints, weights, joints2, weights2, indices
 
-    def gen_adjacency(self):
-        ib = list(self.ib.parse())
-        faces = [ib[i*3:(i+1)*3] for i in range(len(ib)//3)]
-        adjacency = [f+[f[0],f[1],f[1],f[2],f[2],f[0]]+f for f in faces]
-        adjacency = [x for row in adjacency for x in row]
-        self.ib2.update(adjacency)
+    def import_gltf(self, gltf):
+        bone_ids = [i for i in range(len(gltf.bones))]
+        bone_ids = struct.pack('<'+'H'*len(bone_ids), *bone_ids)
+        self.active_bone_ids = bone_ids
+        self.required_bone_ids = bone_ids
+        self.uv_num = gltf.uv_num
+        texcoords = [flatten(l) for l in gltf.texcoords]
+        pos_range = self.vb.get_range()
+        positions = flatten(gltf.positions)
+        x = [pos[0] for pos in positions]
+        y = [pos[2] for pos in positions]
+        z = [pos[1] for pos in positions]
+        pos_range_gltf = [max(x)-min(x), max(y)-min(y), max(z)-min(z)]
+        c=0
+        for i in range(3):
+            c+=pos_range_gltf[i]>(pos_range[i]*10)
+        if c>=2:
+            positions = [[p/100 for p in pos] for pos in positions]
+
+        self.vb.import_gltf(flatten(gltf.normals), flatten(gltf.tangents), positions, texcoords, gltf.uv_num)
+
+        joints = gltf.joints
+        weights = gltf.weights
+        joints2 = gltf.joints2
+        weights2 = gltf.weights2
+
+        if joints2!=[]:
+            joints = [[j+j2 for j,j2 in zip(joint, joint2)] for joint, joint2 in zip(joints, joints2)]
+            weights = [[w+w2 for w,w2 in zip(weight, wegiht2)] for weight, wegiht2 in zip(weights, weights2)]
+        vertex_groups = [[[m for m,n in zip(j,w) if n>0] for j,w in zip(joint, weight)] for joint, weight in zip(joints, weights)]
+        vertex_groups = [list(set(flatten(vg))) for vg in vertex_groups]
+        for vg in vertex_groups:
+            if len(vg)>255:
+                print(len(vg))
+                raise RuntimeError('Can not use more than 255 bones for a material.')
+        
+        if len(self.sections)<len(joints):
+            self.sections += [self.sections[-1].copy() for i in range(len(joints)-len(self.sections))]
+        self.sections=self.sections[:len(joints)]
+
+        max_bone_influences = 4*(1+(joints2!=[]))
+        vertex_nums = [len(joint) for joint in gltf.joints]
+        face_nums = [len(face)//3 for face in gltf.indices]
+        first_vertex_id = 0
+        first_ids =[]
+        first_ib_id = 0
+        for section, vg, id, vert_num, face_num in zip(self.sections, vertex_groups, gltf.material_ids, vertex_nums, face_nums):
+            first_ids.append(first_vertex_id)
+            section.import_gltf(vg, id, first_vertex_id, vert_num, first_ib_id, face_num, max_bone_influences)
+            first_vertex_id += vert_num
+            first_ib_id += face_num*3
+        vertex_groups = [vg+[0] for vg in vertex_groups]
+
+        joints = [[[vg.index(m)*(n!=0) for m,n in zip(j,w)] for j, w in zip(joint, weight)] for joint, weight, vg in zip(joints, weights, vertex_groups)]
+
+        self.vb2.import_gltf(flatten(joints), flatten(weights), joints2!=[])
+        indices = [[i+first_id for i in ids] for ids, first_id in zip(gltf.indices, first_ids)]
+        indices = flatten(indices)
+        self.ib.update(indices, ((self.vb.size>65000)+1)*2)
+        self.no_tessellation=True
+        self.ib2 = None
+        #indices = [indices[i*3:(i+1)*3] for i in range(len(indices)//3)]
+        #indices = [f + [f[0] + f[1] + f[1] + f[2] + f[2] + f[0]] + f for f in indices]
+        #indices = flatten(indices)
+        #self.ib2.update(indices, ((self.vb.size>65000)+1)*2)
+
+        self.remove_KDI()

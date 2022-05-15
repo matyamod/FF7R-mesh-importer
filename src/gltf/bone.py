@@ -5,12 +5,13 @@ class Bone:
         self.name=name
         self.children = children
         self.trans=trans
-        self.rot = [-rot[0], -rot[1], -rot[2], rot[3]]
+        self.rot = rot
         rot_mat = Mat4.quaternion_to_matrix(self.rot)
         trans_mat = Mat4.transform_to_matrix([-x for x in trans])
         scale_mat = Mat4.scale_to_matrix(scale)
         self.local_matrix = trans_mat*rot_mat*scale_mat
         self.global_matrix = None
+        self.parent_name = None
 
     def to_node(self):
         node = {'name': self.name}
@@ -39,5 +40,4 @@ class Bone:
         for b in bones:
             if b.global_matrix is None:
                 b.update_global_matrix_rec(Mat4.identity(), bones)
-        
-    
+

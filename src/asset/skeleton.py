@@ -48,7 +48,7 @@ class Bone:
         self.pos=bone.pos
         self.name = bone.name
         self.instance = bone.instance
-        self.parent = bone.parent
+        self.parent_name = bone.parent_name
 
     def update_name_id(self, name_list):
         if self.name_id>=0:
@@ -100,11 +100,25 @@ class Bone:
     def to_gltf_bone(self):
         ary = list(struct.unpack('<'+'f'*10, self.pos))
         children = [c+1 for c in self.children]
-        pos = ary[4:7]
-        pos = [pos[0]/100, pos[2]/100, pos[1]/100]
-        return gltfBone(self.name, children, [ary[0], ary[2], ary[1], ary[3]], pos, [ary[7], ary[9], ary[8]])
-        #return gltfBone(self.name, children, [ary[0], ary[1], ary[2], ary[3]], pos, [ary[7], ary[8], ary[9]])
-    
+        rot = [-ary[0], -ary[2], -ary[1], ary[3]]
+        trans = ary[4:7]
+        trans = [trans[0]/100, trans[2]/100, trans[1]/100]
+        scale = [ary[7], ary[9], ary[8]]
+        return gltfBone(self.name, children, rot, trans, scale)
+
+    def gltf_to_bone(gltf_bone):
+        rot = gltf_bone.rot
+        rot = [-rot[0], -rot[2], -rot[1], rot[3]]
+        trans = gltf_bone.trans
+        trans = [trans[0]*100, trans[2]*100, trans[1]*100]
+        scale = [1]*3
+        ary = rot+trans+scale
+        bone = Bone(-1, 0, -1)
+        bone.pos = struct.pack('<'+'f'*10, *ary)
+        bone.name = gltf_bone.name
+        bone.parent_name = gltf_bone.parent_name
+        return bone
+
     def bones_to_gltf(bones):
         Bone.record_children(bones)
         gltf_bones = [b.to_gltf_bone() for b in bones]
@@ -125,7 +139,6 @@ class Bone:
             if b.name == self.parent_name:
                 self.parent = i
                 break
-
 
 #Skeleton data for skeletal mesh assets
 class Skeleton:
@@ -186,6 +199,8 @@ class Skeleton:
 
         for bone in self.bones:
             bone.update_name_id(name_list)
+        for bone in self.bones:
+            bone.update_parent_id(bones)
 
     def print(self, padding=0):
         pad=' '*padding
@@ -202,7 +217,7 @@ class SkeletonAsset:
     def __init__(self, f, name_list):
         self.offset=f.tell()
         magic = f.read(6)
-        check(magic, SkeletonAsset.MAGIC, f)
+        check(magic, SkeletonAsset.MAGIC, f, "Not FF7R's asset.")
         bone_num = read_uint32(f)
         unk = f.read(bone_num*3)
         check(unk, b'\x82\x03\x01'*bone_num, f)
@@ -274,7 +289,6 @@ class SkeletonAsset:
         for b in self.bones:
             b.update_parent_id(self.bones)
 
-
         if only_phy_bones:
             logger.log('Phy bones have been imported.', ignore_verbose=True)
         else:
@@ -295,3 +309,4 @@ class SkeletonAsset:
         bones = Bone.bones_to_gltf(self.bones)
         gltf = glTF(bones, None, None, None)
         gltf.save(name, save_folder)
+    

@@ -1,5 +1,6 @@
 import os, json, sys, struct
 from gltf.bone import Bone
+from gltf.mat import Mat4
 from util.logger import logger
 
 #componentType
@@ -9,6 +10,22 @@ from util.logger import logger
 #5123: unsigned short (id, joint)
 #5125: unsigned int
 #5126: float (pos, normal, tangent, texcoord)
+COMPONENT_TYPE = {
+    '5120': 'b',
+    '5121': 'B',
+    '5122': 'h',
+    '5123': 'H',
+    '5125': 'I',
+    '5126': 'f'
+}
+
+TYPE = {
+    "SCALAR": 1,
+    "VEC2": 2,
+    "VEC3": 3,
+    "VEC4": 4,
+    "MAT4": 16,
+}
 
 #type
 # SCALAR (id)
@@ -195,17 +212,8 @@ class glTF:
             list = [x for row in list for x in row]
         offset = f.tell()
         
-        try:
-            bin = struct.pack('<'+type*len(list), *list)
-        except:
-            mi = 2**30
-            ma = -2**30
-            for i in list:
-                mi = min(mi, i)
-                ma = max(ma, i)
-            print(mi, ma)
+        bin = struct.pack('<'+type*len(list), *list)
 
-            raise RuntimeError('Failed to export as gltf.')
         f.write(bin)
         size = f.tell()-offset
         return glTF.view_to_dict(offset, size)
@@ -296,3 +304,143 @@ class glTF:
         logger.log('Saving '+file+'...', ignore_verbose=True)
         with open(file, 'w') as f:
             json.dump(d, f, indent=4)
+
+    def parse_buffer(buffer, accessor):
+        type = COMPONENT_TYPE[str(accessor['componentType'])]
+        count  = accessor['count']
+        num = TYPE[accessor['type']]
+        l = list(struct.unpack('<'+type*count*num, buffer))
+        if num>1:
+            l = [l[i*num:(i+1)*num] for i in range(count)]
+        return l
+
+    def load_buffers(bufferView, accessors, file):
+        if not os.path.exists(file):
+            raise RuntimeError('File not found ({})'.format(file))
+        with open(file, 'rb') as f:
+            buffers = []
+            for view, acc in zip(bufferView, accessors):
+                f.seek(view['byteOffset'])
+                buf = f.read(view['byteLength'])
+                buffers.append(glTF.parse_buffer(buf, acc))
+        return buffers
+
+    def load(file):
+        logger.log('Loading {}...'.format(file))
+        dir = os.path.dirname(file)
+        with open(file, 'r') as f:
+            j = json.load(f)
+        nodes = j['nodes']
+        for node in nodes:
+            if 'children' in node:
+                children = node['children']
+            else:
+                children = []
+            for c in children:
+                nodes[c]['parent_name'] = node['name']
+        maybe_armature = nodes[-1]
+        is_armature = False
+        for c in maybe_armature['children']:
+            if nodes[c]['name']=='Trans':
+                is_armature=True
+                break
+        if not is_armature:
+            raise RuntimeError("There is no armature, or the root bone is not 'Trans'.")
+        maybe_armature['name']='None'
+        if 'scale' in maybe_armature:
+            root_scale = maybe_armature['scale']
+        else:
+            root_scale = [1]*3
+        if ('scenes' not in j) or len(j['scenes'])!=1:
+            raise RuntimeError('There should be only 1 scene.')
+        if len(j['scenes'][0]['nodes'])!=1:
+            raise RuntimeError('There should be only 1 mesh object in the glTF file.')
+        root_id = j['scenes'][0]['nodes'][0]
+        name = nodes[root_id]['name']
+        logger.log('Mesh name: {}'.format(name))
+        if ('materials' not in j) or len(j['materials'])==0:
+            raise RuntimeError('Material data not found.')
+        material_names = [m['name'] for m in j['materials']]
+        
+        logger.log('Materials')
+        for m in material_names:
+            logger.log('  ' + m)
+        if ('meshes' not in j) or len(j['meshes'])==0:
+            raise RuntimeError('Mesh data not found.')
+        primitives = j['meshes'][0]['primitives']
+        bone_node_ids = j['skins'][0]['joints']
+        logger.log('Bones')            
+        bones = []
+        def vec_mult(a,b):
+            return [a[0]*b[0], a[1]*b[1], a[2]*b[2]]
+        for i in bone_node_ids:
+            node = nodes[i]
+            name = node['name']
+  
+            if 'translation' in node:
+                trans = vec_mult(node['translation'], root_scale)
+                #trans = [trans[0], trans[2], -trans[1]]
+            else:
+                trans = [0]*3
+            if 'scale' in node:
+                scale = node['scale']
+            else:
+                scale = [1]*3
+            rot = node['rotation']
+            #rot = [rot[0], rot[2], -rot[1], rot[3]]
+            
+            bone = Bone(name, [], rot, trans, scale)
+            parent_name = node['parent_name']
+            bone.parent_name = parent_name
+            logger.log('  {}: name: {}, parent: {}'.format(i, name, parent_name))
+
+            bones.append(bone)
+        buffers = glTF.load_buffers(j['bufferViews'], j['accessors'], os.path.join(dir, j['buffers'][0]['uri']))
+        #matrices = buffers[-1]
+        #matrices = [[m[i*4:(i+1)*4] for i in range(4)] for m in matrices]
+        #matrices = [Mat4(m) for m in matrices]
+        #m = Mat4.quaternion_to_matrix([-0.5,-0.5,0.5,-0.5])
+        #for gm in matrices:
+            #m = m.inverse()*gm
+            #print(m.get_quaternion())
+
+        normals = []
+        tangents = []
+        positions = []
+        texcoords = []
+        joints = []
+        weights = []
+        joints2 = []
+        weights2 = []
+        indices = []
+        material_ids = []
+
+        sample_primitive = primitives[0]['attributes']
+        if 'TANGENT' not in sample_primitive:
+            raise RuntimeError('Not found tangent data.')
+        uv_num=0
+        while('TEXCOORD_{}'.format(uv_num) in sample_primitive):
+            uv_num+=1
+        logger.log('uv count: {}'.format(uv_num))
+        texcoords = [[] for i in range(uv_num)]
+
+        for p in primitives:
+            attr = p['attributes']
+            normals.append(buffers[attr['NORMAL']])
+            tangents.append(buffers[attr['TANGENT']])
+            position = buffers[attr['POSITION']]
+            positions.append(position)
+            joints.append(buffers[attr['JOINTS_0']])
+            weights.append(buffers[attr['WEIGHTS_0']])
+            if 'JOINTS_1' in attr:
+                joints2.append(buffers[attr['JOINTS_1']])
+                weights2.append(buffers[attr['WEIGHTS_1']])
+            for i in range(uv_num):
+                texcoords[i].append(buffers[attr['TEXCOORD_{}'.format(i)]])
+            indices.append(buffers[p['indices']])
+            material_ids.append(p['material'])
+
+        gltf = glTF(bones, material_names, material_ids, uv_num)
+        gltf.set_parsed_buffers(normals, tangents, positions, texcoords, joints, weights, joints2, weights2, indices)
+
+        return gltf

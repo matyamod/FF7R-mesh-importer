@@ -1,4 +1,4 @@
-import os, json, struct, io
+import os, json, struct
 from util.io_util import *
 from util.logger import logger
 
@@ -62,7 +62,7 @@ class Mesh:
         while (True):
             while (buf!=b'\xFF\xFF\xFF'):
                 buf=b''.join([buf[1:], f.read(1)])
-                if f.tell()-offset>10000:
+                if f.tell()-offset>100000:
                     raise RuntimeError('Material properties not found. This is an unexpected error.')
             f.seek(-4,1)
             import_id=-read_int32(f)-1
@@ -72,11 +72,11 @@ class Mesh:
             buf=f.read(3)
         return
 
-    def add_material_slot(self, imports, name_list, file_data_ids, material = None):
-        if material is None:
-            slot_name = 'new_material_slot_name'
-            import_name = 'new_material_name'
-            file_path = '/Game/GameContents/path_to_material'
+    def add_material_slot(self, imports, name_list, file_data_ids, material):
+        if type(material)==type(""):
+            slot_name = material
+            import_name = material
+            file_path = '/Game/GameContents/path_to_'+material
         else:
             slot_name = material.slot_name
             import_name = material.import_name
@@ -154,9 +154,10 @@ class StaticMesh(Mesh):
         gltf.set_parsed_buffers(normals, tangents, positions, texcoords, None, None, None, None, indices)
         gltf.save(name, save_folder)
 
-    def import_LODs(self, mesh, imports, name_list, file_data_ids, ignore_material_names=False):
+    def import_LODs(self, mesh, imports, name_list, file_data_ids):
         if len(self.materials)<len(mesh.materials):
-            raise RuntimeError('Can not add material slos to static mesh.')
+            raise RuntimeError('Can not add materials to static mesh.')
+        ignore_material_names=False
         super().import_LODs(mesh, imports, name_list, file_data_ids, ignore_material_names=ignore_material_names)
 
 #skeletal mesh
@@ -208,12 +209,6 @@ class SkeletalMesh(Mesh):
                 phy_mesh.print()
             else:
                 phy_mesh=None
-            #num=read_uint32(f)
-            #phy_mesh=[]
-            #for i in range(num):
-                #mesh=PhysicalMesh.read(f)
-                #phy_mesh.append(mesh)
-                #mesh.print()
         else:
             phy_mesh=None
         return SkeletalMesh(ff7r, unk, materials, skeleton, LODs, phy_mesh)
@@ -232,7 +227,7 @@ class SkeletalMesh(Mesh):
 
 
     def import_LODs(self, skeletalmesh, imports, name_list, file_data_ids, only_mesh=False, only_phy_bones=False,
-                    dont_remove_KDI=False, ignore_material_names=False):
+                    dont_remove_KDI=False):
         if not self.ff7r:
             raise RuntimeError("The file should be an FF7R's asset!")
 
@@ -249,11 +244,13 @@ class SkeletalMesh(Mesh):
             if self.phy_mesh is not None:
                 self.phy_mesh.update_bone_ids(self.skeleton.bones)
 
-        if ignore_material_names and len(self.materials)<len(skeletalmesh.materials):
+        ignore_material_names=False
+        if len(self.materials)<len(skeletalmesh.materials):
+            ignore_material_names=True
             added_num = len(skeletalmesh.materials)-len(self.materials)
             for i in range(added_num):
                 self.add_material_slot(imports, name_list, file_data_ids, skeletalmesh.materials[len(self.materials)])
-            logger.log('Added {} materials.'.format(added_num), ignore_verbose=True)
+            logger.warn('Added {} materials. You may need to edit name table to use the new materials.'.format(added_num))
 
         super().import_LODs(skeletalmesh, imports, name_list, file_data_ids, ignore_material_names=ignore_material_names)
 
@@ -277,6 +274,39 @@ class SkeletalMesh(Mesh):
         normals, tangents, positions, texcoords, joints, weights, joints2, weights2, indices = self.LODs[0].parse_buffers_for_gltf()
         gltf.set_parsed_buffers(normals, tangents, positions, texcoords, joints, weights, joints2, weights2, indices)
         gltf.save(name, save_folder)
+
+    def import_gltf(self, gltf, imports, name_list, file_data_ids, only_mesh = True, ignore_material_names=True):
+        if not self.ff7r:
+            raise RuntimeError("The file should be an FF7R's asset!")
+        bones = [Bone.gltf_to_bone(bone) for bone in gltf.bones]
+
+        bone_diff=len(self.skeleton.bones)-len(bones)
+        if (only_mesh) and bone_diff!=0:
+            msg = 'Skeletons are not the same.'
+            raise RuntimeError(msg)
+        if not only_mesh:
+            raise RuntimeError('Bone injection is not supported for glTF.')
+            #self.skeleton.import_bones(bones, name_list)
+        #if not only_mesh and self.phy_mesh is not None:
+            #self.phy_mesh.update_bone_ids(self.skeleton.bones)
+
+        ignore_material_names=False
+        if len(self.materials)<len(gltf.materials):
+            ignore_material_names=True
+            added_num = len(gltf.materials)-len(self.materials)
+            for i in range(added_num):
+                self.add_material_slot(imports, name_list, file_data_ids, gltf.materials[len(self.materials)].name)
+            logger.warn('Added {} materials. You need to edit name table to use the new materials.'.format(added_num))
+
+        for m in gltf.materials:
+            m.import_name = m.name
+        new_material_ids = Material.check_confliction(self.materials, gltf.materials, ignore_material_names=ignore_material_names)
+        
+        self.remove_LODs()
+        lod = self.LODs[0]
+        lod.import_gltf(gltf)
+        lod.update_material_ids(new_material_ids)
+        pass
 
 #collider or something? low poly mesh.
 class PhysicalMesh:
@@ -313,7 +343,10 @@ class PhysicalMesh:
                 continue
             id_map[i]=new_bone_names.index(name)
         if len(missing_bones)>0:
-            logger.warn('Some existing bones are missing. It might corrupt animations. {}'.format(missing_bones))
+            if len(missing_bones)>10:
+                logger.warn('Some existing bones are missing. It might corrupt animations. {}'.format(missing_bones[:10] + ['...']))
+            else:
+                logger.warn('Some existing bones are missing. It might corrupt animations. {}'.format(missing_bones))
             return
 
         ids = [self.weight_buffer[i*8:i*8+8] for i in range(len(self.vb)//12)]

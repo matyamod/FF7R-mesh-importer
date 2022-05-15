@@ -2,6 +2,7 @@ import os, argparse, shutil
 from util.io_util import *
 from util.logger import Timer, logger
 from asset.uexp import MeshUexp
+from gltf.gltf import glTF
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -13,7 +14,6 @@ def get_args():
     parser.add_argument('--only_mesh', action='store_true', help='Does not import bones.')
     parser.add_argument('--only_phy_bones', action='store_true', help='Does not import bones except phy bones.')
     parser.add_argument('--dont_remove_KDI', action='store_true', help='Does not remove KDI buffers.')
-    parser.add_argument('--ignore_material_names', action='store_true', help='Does not check material names.')
     parser.add_argument('--author', default='', type=str, help='You can embed a string into uexp.')
 
     args = parser.parse_args()
@@ -23,9 +23,13 @@ def import_mesh(ff7r_file, ue4_18_file, save_folder, args):
 
     file=os.path.basename(ff7r_file)
     trg_mesh=MeshUexp(ff7r_file)
-    src_mesh=MeshUexp(ue4_18_file)
-    trg_mesh.import_LODs(src_mesh, only_mesh=args.only_mesh, only_phy_bones=args.only_phy_bones,
-                        dont_remove_KDI=args.dont_remove_KDI, ignore_material_names=args.ignore_material_names)
+    if ue4_18_file[-4:]=='gltf':
+        gltf=glTF.load(ue4_18_file)
+        trg_mesh.import_gltf(gltf)
+    else:
+        src_mesh=MeshUexp(ue4_18_file)
+        trg_mesh.import_LODs(src_mesh, only_mesh=args.only_mesh, only_phy_bones=args.only_phy_bones,
+                            dont_remove_KDI=args.dont_remove_KDI)
     if args.author!='':
         trg_mesh.embed_string(args.author)
     new_file=os.path.join(save_folder, file)
@@ -41,25 +45,29 @@ def remove_LOD(ff7r_file, save_folder):
     return 'Success!'
 
 def valid(ff7r_file, save_folder):
-    save_folder = 'workspace/valid'
-    if os.path.exists(save_folder):
-        shutil.rmtree(save_folder)
-    mkdir(save_folder)
+    if ff7r_file[-4:]=='gltf':
+        gltf = glTF.load(ff7r_file)
+        msg = 'Success!'
+    else:
+        save_folder = 'workspace/valid'
+        if os.path.exists(save_folder):
+            shutil.rmtree(save_folder)
+        mkdir(save_folder)
 
-    file=os.path.basename(ff7r_file)
-    new_file=os.path.join(save_folder, file)
+        file=os.path.basename(ff7r_file)
+        new_file=os.path.join(save_folder, file)
 
-    mesh=MeshUexp(ff7r_file)
-    author = mesh.get_author()
+        mesh=MeshUexp(ff7r_file)
+        author = mesh.get_author()
 
-    mesh.save(new_file)
-    try:
-        compare(ff7r_file, new_file)
-        compare(ff7r_file[:-4]+'uasset', new_file[:-4]+'uasset')
-        msg='Valid!'+' Author: {},'.format(author)*(author!='')
+        mesh.save(new_file)
+        try:
+            compare(ff7r_file, new_file)
+            compare(ff7r_file[:-4]+'uasset', new_file[:-4]+'uasset')
+            msg='Valid!'+' Author: {},'.format(author)*(author!='')
 
-    except Exception as e:
-        msg='Invalid. {}'.format(e)
+        except Exception as e:
+            msg='Invalid. {}'.format(e)
     return msg
 
 def dump_buffers(ff7r_file, save_folder):

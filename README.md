@@ -1,12 +1,13 @@
 ![build](https://github.com/matyalatte/FF7R-mesh-importer/actions/workflows/build.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-# FF7R-mesh-importer ver0.2.1
+# FF7R-mesh-importer ver0.2.3
 A tool for importing meshes into uassets extracted from FF7R
 
 ## Features
 
 - Inject mesh assets
+- Inject glTF mesh
 - Export mesh assets as glTF
 - Dump buffers
 
@@ -14,13 +15,16 @@ A tool for importing meshes into uassets extracted from FF7R
 
 - This is a beta version. There may be bugs.
 - Able to edit vertices, faces, uv maps, and bone weights.
-- Unable to edit bones.
-- Unable to add materials and uv maps.
+- ~~Unable to edit bones.~~
+- ~~Unable to add materials and uv maps.~~
+- Able to add bones. (but you may need to mod other assets to use the new bones)
+- Able to add materials to skeletal asset.
 
 ## Supported Assets
 
-- All skeletal mesh assets
-- All static mesh assets
+- Skeletal mesh assets
+- Static mesh assets
+- Skeleton assets (the tool can import bone data from skeletal mesh.)
 
 ## Requirements
 
@@ -46,7 +50,7 @@ Download `FF7R-MeshImporter*.zip` from [here](https://github.com/matyalatte/FF7R
 - A special thanks to Narknon for the GUI implementation and much discussion.
 - A special thanks to TerryXXX for the tutorial, much discussion, and doing many tests.
 - Thanks to Jordan Tucker for the data map.
-- Thanks to JujuB, Amiibolad, and Altezein for the testing.
+- Thanks to JujuB, Amiibolad, Altezein, and Jas for the testing.
 
 ## Command Line Usage
 You can use our tool with the Command-line.<br>
